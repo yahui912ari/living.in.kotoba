@@ -5,140 +5,169 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kotoba's Island</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --theme: #59b9c6; --bg: #eaedf7; --font-jp: 'Noto Serif JP', serif; }
-        body { font-family: 'Playfair Display', var(--font-jp); background: var(--bg); color: var(--theme); height: 100vh; overflow: hidden; font-weight: 400; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(89, 185, 198, 0.15); border-radius: 2rem; }
-        .card { background: rgba(255, 255, 255, 0.9); border-radius: 1.5rem; transition: all 0.3s ease; border: 1px solid rgba(89, 185, 198, 0.1); }
-        .custom-scroll::-webkit-scrollbar { width: 3px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(89, 185, 198, 0.2); border-radius: 10px; }
-        @media (max-width: 1024px) {
-            body { overflow-y: auto; height: auto; }
-            .main-container { flex-direction: column; height: auto; padding: 1rem; gap: 1rem; }
-            aside, main { width: 100% !important; height: auto !important; }
-            .view-section { min-height: 500px; }
+        :root { --theme: #59b9c6; --bg: #eaedf7; }
+        
+        /* 基礎字體設定 */
+        body { 
+            font-family: 'Playfair Display', 'Noto Serif JP', serif; 
+            background: var(--bg); 
+            color: var(--theme); 
+            min-height: 100vh; 
+            font-weight: 400; 
         }
-        .nav-link { opacity: 0.4; transition: 0.3s; cursor: pointer; display: flex; align-items: center; gap: 1rem; }
-        .nav-active { color: var(--theme); border-right: 2px solid var(--theme); opacity: 1 !important; }
-        .level-btn.active { background: var(--theme); color: white; }
-        .btn-primary { border: 1px solid var(--theme); color: var(--theme); border-radius: 999px; transition: 0.3s; background: transparent; font-weight: 400; }
-        .btn-primary:hover { background: var(--theme); color: white; }
-        input { color: var(--theme); font-weight: 300; background: transparent; outline: none; }
-        input::placeholder { color: var(--theme); opacity: 0.3; }
-        .font-jp { font-family: var(--font-jp); font-weight: 300; }
-        ruby rt { color: #888; font-weight: 300; font-size: 0.6em; }
+
+        /* 日文字體專用 */
+        .font-jp, ruby, .jp-text { 
+            font-family: 'Noto Serif JP', serif; 
+            font-weight: 400; 
+        }
+
+        /* 英語標題斜體 */
+        h1, h2, .en-italic { 
+            font-family: 'Playfair Display', serif; 
+            font-style: italic; 
+            font-weight: 400;
+        }
+
+        /* 裝飾與組件 */
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(89, 185, 198, 0.15); border-radius: 2rem; }
+        .card { background: rgba(255, 255, 255, 0.9); border-radius: 1.5rem; border: 1px solid rgba(89, 185, 198, 0.1); transition: 0.3s; }
+        .inner-scroll::-webkit-scrollbar { width: 3px; }
+        .inner-scroll::-webkit-scrollbar-thumb { background: rgba(89, 185, 198, 0.2); border-radius: 10px; }
+        
+        .workspace-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        @media (max-width: 1024px) { .workspace-grid { grid-template-columns: 1fr; } }
+
+        /* 按鈕狀態控制 - 減少粗體使用 */
+        .level-btn.active, .type-btn.active, .quiz-topic-btn.active { 
+            background: var(--theme); 
+            color: white; 
+            border-color: var(--theme); 
+        }
+        
+        input { 
+            color: var(--theme); 
+            background: transparent; 
+            outline: none; 
+            border-bottom: 1px solid rgba(89, 185, 198, 0.1); 
+            font-family: 'Playfair Display', serif;
+        }
+
+        ruby rt { color: #888; font-weight: 400; font-size: 0.6em; font-family: 'Noto Serif JP', serif; }
+        
+        .animate-sparkle { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
     </style>
 </head>
-<body class="flex items-center justify-center">
+<body class="p-6 md:p-10">
 
-    <div class="main-container relative z-10 w-full h-full max-w-[1800px] flex p-6 gap-6">
-
-        <aside class="w-[220px] flex-shrink-0 flex flex-col gap-10 glass p-8 h-full hidden lg:flex">
+    <div class="max-w-[1600px] mx-auto flex flex-col gap-10">
+        <header class="flex justify-between items-center px-2">
             <div class="flex items-center gap-3">
                 <i data-lucide="sparkle" class="w-5 h-5"></i>
-                <h1 class="text-xl italic">Kotoba's</h1>
+                <h1 class="text-xl tracking-tight">Kotoba's Island</h1>
             </div>
-            <nav class="flex flex-col gap-6">
-                <div onclick="switchView('map-view', this)" class="nav-link nav-active"><i data-lucide="sparkle" class="w-4 h-4"></i> Discovery</div>
-                <div onclick="switchView('idea-view', this)" class="nav-link"><i data-lucide="sparkle" class="w-4 h-4"></i> Inspiration</div>
-                <div onclick="switchView('quiz-view', this)" class="nav-link"><i data-lucide="sparkle" class="w-4 h-4"></i> Challenge</div>
-            </nav>
-            <div class="mt-auto">
-                <input id="api-key" type="password" placeholder="Input your key..." onchange="localStorage.setItem('ds_key', this.value)" 
-                       class="w-full bg-white/40 rounded-xl px-4 py-2 text-xs border border-transparent focus:border-[#59b9c6]/20 transition-all">
+            <div class="flex items-center gap-8">
+                <input id="api-key" type="password" placeholder="Key..." onchange="localStorage.setItem('ds_key', this.value)" 
+                       class="w-32 text-[10px] pb-1 border-none focus:ring-0">
+                <button onclick="exportTxt()" class="opacity-40 hover:opacity-100 transition-all">
+                    <i data-lucide="sparkle" class="w-4 h-4"></i>
+                </button>
             </div>
-        </aside>
+        </header>
 
-        <main class="flex-1 flex flex-col h-full glass overflow-hidden border-none shadow-sm">
-            
-            <section id="map-view" class="view-section active p-8 flex flex-col h-full">
-                <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-                    <div><h2 class="text-4xl italic mb-1">Discovery</h2><p class="opacity-40 text-[10px] font-jp tracking-widest uppercase">Explore the connections</p></div>
-                    <div class="relative w-full md:w-72">
-                        <i data-lucide="sparkle" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30"></i>
-                        <input id="search-in" type="text" placeholder="Explore word..." onkeypress="if(event.key==='Enter') searchWord()" 
-                               class="w-full bg-white/50 border border-[#59b9c6]/10 rounded-2xl pl-10 pr-4 py-3 text-sm focus:bg-white transition-all">
-                    </div>
-                </header>
-                <div class="flex-1 overflow-y-auto custom-scroll pr-2">
-                    <div id="nodes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                    <div id="example-area" class="mt-10 space-y-6"></div>
+        <div class="workspace-grid items-stretch">
+            <section class="glass flex flex-col h-[650px] overflow-hidden">
+                <div class="p-8 pb-4 flex justify-between items-center border-b border-[#59b9c6]/5">
+                    <h2 class="text-2xl">Discovery</h2>
+                    <i data-lucide="sparkle" class="w-3 h-3 opacity-20"></i>
+                </div>
+                <div class="px-8 pt-6">
+                    <input id="search-in" type="text" placeholder="Explore word..." onkeypress="if(event.key==='Enter') searchWord()" class="w-full text-sm pb-2">
+                </div>
+                <div class="flex-1 overflow-y-auto inner-scroll p-8 space-y-4">
+                    <div id="nodes-grid" class="flex flex-col gap-4"></div>
+                    <div id="example-area" class="pt-4 space-y-4"></div>
                 </div>
             </section>
 
-            <section id="idea-view" class="view-section hidden p-10 flex flex-col items-center justify-center h-full text-center">
-                <i data-lucide="sparkle" class="w-8 h-8 mb-6 opacity-20"></i>
-                <h2 class="text-5xl italic mb-12">Inspiration</h2>
-                <div class="flex gap-4 mb-10">
-                    <button onclick="selectType(this, 'Vocabulary')" class="type-btn px-8 py-2 rounded-full border border-[#59b9c6]/20 text-xs bg-[#59b9c6] text-white">語彙</button>
-                    <button onclick="selectType(this, 'Grammar')" class="type-btn px-8 py-2 rounded-full border border-[#59b9c6]/20 text-xs">文法</button>
-                    <button onclick="selectType(this, 'Culture')" class="type-btn px-8 py-2 rounded-full border border-[#59b9c6]/20 text-xs">文化</button>
+            <section class="glass flex flex-col h-[650px] overflow-hidden">
+                <div class="p-8 pb-4 flex justify-between items-center border-b border-[#59b9c6]/5">
+                    <h2 class="text-2xl">Inspiration</h2>
+                    <i data-lucide="sparkle" class="w-3 h-3 opacity-20"></i>
                 </div>
-                <button onclick="getIdea()" id="idea-btn" class="btn-primary px-16 py-3 text-[10px] tracking-widest uppercase mb-12">Seek</button>
-                <div id="idea-res" class="hidden animate-fade-in">
-                    <div id="idea-word" onclick="searchWord(this.innerText)" class="text-4xl font-jp border-b border-[#59b9c6]/30 pb-2 cursor-pointer hover:opacity-50 transition-all inline-block">...</div>
+                <div class="flex-1 overflow-y-auto inner-scroll p-8 flex flex-col items-center justify-center text-center gap-10">
+                    <div class="flex gap-2">
+                        <button onclick="currentType='Vocabulary'; updateTypeUI(this, 'type-btn')" class="type-btn active px-5 py-1 rounded-full border border-[#59b9c6]/20 text-[10px] font-jp">語彙</button>
+                        <button onclick="currentType='Grammar'; updateTypeUI(this, 'type-btn')" class="type-btn px-5 py-1 rounded-full border border-[#59b9c6]/20 text-[10px] font-jp">文法</button>
+                        <button onclick="currentType='Culture'; updateTypeUI(this, 'type-btn')" class="type-btn px-5 py-1 rounded-full border border-[#59b9c6]/20 text-[10px] font-jp">文化</button>
+                    </div>
+                    <button onclick="getIdea()" id="idea-btn" class="group w-24 h-24 rounded-full border border-[#59b9c6]/30 flex items-center justify-center hover:bg-[#59b9c6]/5 transition-all">
+                        <i data-lucide="sparkle" id="idea-icon" class="w-6 h-6 opacity-40 group-hover:scale-110 transition-transform"></i>
+                    </button>
+                    <div id="idea-res" class="hidden animate-fade-in px-4">
+                        <div id="idea-word" onclick="searchWord(this.innerText)" class="text-3xl font-jp border-b border-[#59b9c6]/20 pb-2 cursor-pointer hover:opacity-60 transition-all inline-block">...</div>
+                        <p id="idea-desc" class="mt-4 text-[11px] opacity-50 font-jp max-w-xs mx-auto leading-relaxed"></p>
+                    </div>
                 </div>
             </section>
 
-            <section id="quiz-view" class="view-section hidden p-8 flex flex-col h-full">
-                <header class="mb-10 flex flex-col gap-6">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-4xl italic">Challenge</h2>
-                        <button onclick="getQuiz()" id="quiz-btn" class="btn-primary px-8 py-2 text-[10px] uppercase">New Task</button>
+            <section class="glass flex flex-col h-[650px] overflow-hidden">
+                <div class="p-8 pb-4 flex justify-between items-center border-b border-[#59b9c6]/5">
+                    <h2 class="text-2xl">Challenge</h2>
+                    <button onclick="getQuiz()" id="quiz-btn" class="flex items-center gap-2 text-[10px] border border-[#59b9c6]/40 px-4 py-1 rounded-full hover:bg-[#59b9c6] hover:text-white transition-all">
+                        <i data-lucide="sparkle" class="w-3 h-3"></i> <span>NEW</span>
+                    </button>
+                </div>
+                <div class="px-8 pt-4 space-y-4 border-b border-[#59b9c6]/5 pb-6">
+                    <div class="flex justify-center gap-2" id="lv-selector">
+                        <button onclick="currentLv='N5'; updateTypeUI(this, 'level-btn')" class="level-btn w-8 h-8 rounded-full border border-[#59b9c6]/10 text-[9px]">N5</button>
+                        <button onclick="currentLv='N4'; updateTypeUI(this, 'level-btn')" class="level-btn w-8 h-8 rounded-full border border-[#59b9c6]/10 text-[9px]">N4</button>
+                        <button onclick="currentLv='N3'; updateTypeUI(this, 'level-btn')" class="level-btn w-8 h-8 rounded-full border border-[#59b9c6]/10 text-[9px]">N3</button>
+                        <button onclick="currentLv='N2'; updateTypeUI(this, 'level-btn')" class="level-btn w-8 h-8 rounded-full border border-[#59b9c6]/10 text-[9px] active">N2</button>
+                        <button onclick="currentLv='N1'; updateTypeUI(this, 'level-btn')" class="level-btn w-8 h-8 rounded-full border border-[#59b9c6]/10 text-[9px]">N1</button>
                     </div>
-                    <div class="flex flex-wrap gap-4 items-center border-b border-[#59b9c6]/10 pb-6">
-                        <div class="flex gap-2" id="lv-selector">
-                            <button onclick="currentLv='N5'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N5</button>
-                            <button onclick="currentLv='N4'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N4</button>
-                            <button onclick="currentLv='N3'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N3</button>
-                            <button onclick="currentLv='N2'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px] active">N2</button>
-                            <button onclick="currentLv='N1'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N1</button>
-                        </div>
-                        <select id="quiz-type" class="ml-auto bg-transparent text-[10px] uppercase font-jp opacity-60">
-                            <option value="Vocabulary">語彙</option><option value="Grammar">文法</option><option value="Culture">文化</option>
-                        </select>
+                    <div class="flex justify-center gap-2" id="topic-selector">
+                        <button onclick="currentQuizTopic='Vocabulary'; updateTypeUI(this, 'quiz-topic-btn')" class="quiz-topic-btn active px-4 py-1 rounded-full border border-[#59b9c6]/10 text-[10px] font-jp">語彙</button>
+                        <button onclick="currentQuizTopic='Grammar'; updateTypeUI(this, 'quiz-topic-btn')" class="quiz-topic-btn px-4 py-1 rounded-full border border-[#59b9c6]/10 text-[10px] font-jp">文法</button>
+                        <button onclick="currentQuizTopic='Culture'; updateTypeUI(this, 'quiz-topic-btn')" class="quiz-topic-btn px-4 py-1 rounded-full border border-[#59b9c6]/10 text-[10px] font-jp">文化</button>
                     </div>
-                </header>
-                <div id="quiz-container" class="flex-1 overflow-y-auto custom-scroll space-y-8 pb-10"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto inner-scroll p-8 space-y-6">
+                    <div id="quiz-container" class="space-y-6"></div>
+                </div>
             </section>
-        </main>
+        </div>
 
-        <aside class="w-[280px] flex-shrink-0 flex flex-col glass p-8 h-full border-none hidden xl:flex">
-            <div class="flex items-center justify-between mb-8">
-                <div class="flex items-center gap-2 text-xs opacity-50 uppercase tracking-widest"><i data-lucide="sparkle" class="w-3 h-3"></i> Records</div>
-                <button onclick="exportTxt()" class="hover:opacity-50 transition-all"><i data-lucide="sparkle" class="w-4 h-4"></i></button>
-            </div>
-            <div id="record-list" class="flex-1 overflow-y-auto custom-scroll space-y-6"></div>
-            <button onclick="clearSession()" class="mt-8 text-[9px] uppercase tracking-widest opacity-20 hover:opacity-100 text-center">Reset Session</button>
-        </aside>
-
+        <footer class="opacity-30 hover:opacity-80 transition-all flex justify-between items-center text-[10px]">
+            <div id="record-list" class="flex gap-4 overflow-x-auto pb-4 inner-scroll whitespace-nowrap flex-1"></div>
+            <button onclick="resetMemory()" class="flex items-center gap-2 tracking-widest ml-4 hover:text-red-400">
+                <i data-lucide="sparkle" class="w-2 h-2"></i> <span>CLEAR MEMORY</span>
+            </button>
+        </footer>
     </div>
 
     <script>
         lucide.createIcons();
-        let sessionData = []; let used = new Set();
-        let currentLv = "N2"; let currentType = "Vocabulary";
+        let sessionData = [];
+        let currentLv = "N2"; 
+        let currentType = "Vocabulary";
+        let currentQuizTopic = "Vocabulary";
+        let seenIt = new Set(JSON.parse(localStorage.getItem('island_seen_it') || '[]'));
+
+        function markAsSeen(item) {
+            seenIt.add(item);
+            localStorage.setItem('island_seen_it', JSON.stringify([...seenIt]));
+        }
 
         const apiKey = () => document.getElementById('api-key').value || localStorage.getItem('ds_key');
 
-        function switchView(id, el) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('nav-active'));
-            el.classList.add('nav-active');
-        }
-
-        function updateLvUI(btn) {
-            document.querySelectorAll('#lv-selector button').forEach(b => b.classList.remove('active'));
+        function updateTypeUI(btn, className) {
+            document.querySelectorAll('.' + className).forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-        }
-
-        function selectType(btn, t) {
-            currentType = t;
-            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('bg-[#59b9c6]', 'text-white'));
-            btn.classList.add('bg-[#59b9c6]', 'text-white');
         }
 
         async function ai(prompt) {
@@ -158,75 +187,109 @@
             const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
             sessionData.push({time, type, content});
             const list = document.getElementById('record-list');
-            const div = document.createElement('div');
-            div.className = "text-[11px] border-l border-[#59b9c6]/20 pl-4 py-1 animate-fade-in";
-            div.innerHTML = `<div class="mb-2 opacity-60 uppercase scale-75 origin-left border border-current px-2 py-0.5 rounded inline-block">${type}</div>
-                             <div class="font-jp opacity-70 leading-relaxed">${content}</div>`;
-            list.prepend(div);
+            const span = document.createElement('span');
+            span.className = "flex items-center gap-1 border border-[#59b9c6]/10 px-3 py-1 rounded-full animate-fade-in";
+            span.innerHTML = `<i data-lucide="sparkle" class="w-2 h-2 opacity-30"></i> ${time} · ${type}: ${content}`;
+            list.prepend(span);
+            lucide.createIcons();
         }
 
         async function searchWord(w) {
             const q = w || document.getElementById('search-in').value; if(!q) return;
-            const res = await ai(`JSON. 6 words related to "${q}". {"c":{"w":"Kanji","r":"Reading","m":"Meaning"},"ext":[{"w":"Kanji","r":"Reading","m":"Meaning"}]}`);
+            const res = await ai(`JSON. 3 related Japanese words to "${q}". No Romaji. {"c":{"w":"Kanji","r":"Reading","m":"Meaning"},"ext":[{"w":"Kanji","r":"Reading","m":"Meaning"}]}`);
             if(!res) return;
-            const grid = document.getElementById('nodes-grid'); grid.innerHTML = '';
+            const grid = document.getElementById('nodes-grid');
             [res.c, ...res.ext].forEach(n => {
                 const div = document.createElement('div');
-                div.className = "card p-6 cursor-pointer hover:border-[#59b9c6]/30 relative group";
-                div.onclick = () => searchWord(n.w);
-                div.innerHTML = `<div class="absolute right-4 top-4 opacity-0 group-hover:opacity-40" onclick="event.stopPropagation(); getExample('${n.w}')"><i data-lucide="sparkle" class="w-3 h-3"></i></div>
-                                 <div class="font-jp text-xl mb-1"><ruby>${n.w}<rt>${n.r}</rt></ruby></div>
-                                 <p class="text-[10px] opacity-30 font-jp tracking-wider">${n.m}</p>`;
-                grid.appendChild(div);
+                div.className = "card p-5 group relative animate-fade-in";
+                div.innerHTML = `<div class="absolute right-4 top-4 opacity-0 group-hover:opacity-40 cursor-pointer" onclick="event.stopPropagation(); getExample('${n.w}')"><i data-lucide="sparkle" class="w-3 h-3"></i></div>
+                                 <div class="font-jp text-lg mb-1" onclick="searchWord('${n.w}')"><ruby>${n.w}<rt>${n.r}</rt></ruby></div>
+                                 <p class="text-[10px] opacity-50 font-jp tracking-wider">${n.m}</p>`;
+                grid.prepend(div);
             });
-            lucide.createIcons(); addRec("Discovery", res.c.w);
+            lucide.createIcons(); addRec("Search", res.c.w);
         }
 
         async function getExample(w) {
-            const res = await ai(`JSON. N1 sentence for "${w}". {"jp":"...","zh":"..."}`); if(!res) return;
+            const res = await ai(`JSON. One N1 sentence for "${w}". No Romaji. {"jp":"...","zh":"..."}`); if(!res) return;
             const div = document.createElement('div');
-            div.className = "card p-8 border-dashed border-[#59b9c6]/20 text-center animate-slide-up";
-            div.innerHTML = `<p class="font-jp text-lg mb-2 text-[#444]">${res.jp}</p><p class="text-[10px] opacity-30 italic font-jp">${res.zh}</p>`;
+            div.className = "card p-6 border-dashed border-[#59b9c6]/20 text-center animate-slide-up relative";
+            div.innerHTML = `<i data-lucide="sparkle" class="w-3 h-3 absolute top-2 left-2 opacity-10"></i>
+                             <p class="font-jp text-sm mb-2 opacity-80 leading-relaxed">${res.jp}</p>
+                             <p class="text-[10px] opacity-40 font-jp italic">${res.zh}</p>`;
             document.getElementById('example-area').prepend(div);
+            lucide.createIcons();
         }
 
         async function getIdea() {
-            const res = await ai(`JSON. Specific Japanese ${currentType} topic in Japanese. {"word":"..."}`);
-            if(res) { document.getElementById('idea-word').innerText = res.word; document.getElementById('idea-res').classList.remove('hidden'); addRec("Inspiration", res.word); }
+            const icon = document.getElementById('idea-icon');
+            icon.classList.add('animate-sparkle');
+            const blacklist = [...seenIt].slice(-40).join(',');
+            const prompt = `JSON ONLY. Unique Japanese ${currentType} topic. NO Romaji. Strictly AVOID: [${blacklist}]. {"word":"Term","desc":"Description"}`;
+            const res = await ai(prompt);
+            icon.classList.remove('animate-sparkle');
+            if(res) {
+                if(seenIt.has(res.word)) return getIdea();
+                markAsSeen(res.word);
+                document.getElementById('idea-word').innerText = res.word; 
+                document.getElementById('idea-desc').innerText = res.desc;
+                document.getElementById('idea-res').classList.remove('hidden'); 
+                addRec("Idea", res.word); 
+            }
         }
 
         async function getQuiz() {
-            const type = document.getElementById('quiz-type').value;
-            const res = await ai(`JSON. JLPT ${currentLv} quiz for ${type}. Use "[BLANK]". {"q":"Sentence with [BLANK]","h":"Hint","a":"CorrectAnswer","r":"<ruby>Ans<rt>...</rt></ruby>"}`);
-            if(!res || used.has(res.a)) return getQuiz(); used.add(res.a);
-            const id = Date.now();
-            const qHtml = res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-2 w-28 border-b border-[#59b9c6]/40 bg-transparent text-center focus:border-b-2 transition-all font-jp" placeholder="?">`);
-            const div = document.createElement('div');
-            div.className = "card p-12 relative overflow-hidden";
-            div.innerHTML = `<div class="absolute right-6 top-6 opacity-20 text-[10px] tracking-widest">${currentLv}</div>
-                             <div class="text-2xl font-jp mb-10 leading-relaxed text-center text-[#444]">${qHtml}</div>
-                             <div class="flex justify-center flex-col items-center gap-6">
-                                <button onclick="evalQuiz('${id}','${res.a}','${res.r.replace(/'/g,"\\'")}')" class="btn-primary px-12 py-2 text-[10px] tracking-widest uppercase">Evaluate</button>
-                                <div id="res-${id}" class="hidden text-center font-jp animate-fade-in pt-4"></div>
-                             </div>`;
-            document.getElementById('quiz-container').prepend(div);
-            addRec("Challenge", `${currentLv} Task`);
+            const btn = document.getElementById('quiz-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="sparkle" class="w-3 h-3 animate-spin"></i>`;
+            lucide.createIcons();
+            
+            const blacklist = [...seenIt].slice(-40).join(',');
+            const prompt = `JSON ONLY. Generate a JLPT ${currentLv} quiz about "${currentQuizTopic}". NO Romaji. Avoid answers in: [${blacklist}]. Use "[BLANK]". {"q":"Sentence with [BLANK]","h":"Hint","a":"CorrectAnswer","r":"<ruby>Ans<rt>...</rt></ruby>"}`;
+            const res = await ai(prompt);
+            btn.innerHTML = originalHtml;
+            lucide.createIcons();
+
+            if(res) {
+                if(seenIt.has(res.a)) return getQuiz();
+                markAsSeen(res.a);
+                const id = Date.now();
+                const qHtml = res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-1 w-24 border-b border-[#59b9c6]/30 text-center font-jp" placeholder="?">`);
+                const div = document.createElement('div');
+                div.className = "card p-6 animate-fade-in relative";
+                div.innerHTML = `<div class="flex justify-between items-start mb-3">
+                                    <div class="text-[10px] opacity-30 italic uppercase">${currentLv} · ${currentQuizTopic}</div>
+                                    <i data-lucide="sparkle" class="w-2 h-2 opacity-10"></i>
+                                 </div>
+                                 <div class="text-lg font-jp mb-6 leading-relaxed text-[#555]">${qHtml}</div>
+                                 <div class="flex justify-between items-center border-t border-[#59b9c6]/5 pt-4">
+                                    <button onclick="evalQuiz('${id}','${res.a}','${res.r.replace(/'/g,"\\'")}')" class="flex items-center gap-1 text-[10px] opacity-40 hover:opacity-100 tracking-widest uppercase">
+                                        <i data-lucide="sparkle" class="w-2 h-2"></i> EVALUATE
+                                    </button>
+                                    <div id="res-${id}" class="hidden font-jp text-[#59b9c6]"></div>
+                                 </div>`;
+                document.getElementById('quiz-container').prepend(div);
+                lucide.createIcons();
+                addRec("Quiz", `${currentLv}/${currentQuizTopic}`);
+            }
         }
 
         function evalQuiz(id, ans, ruby) {
             const val = document.getElementById(`in-${id}`).value.trim(); const box = document.getElementById(`res-${id}`);
-            box.innerHTML = (val === ans) ? `<div class="text-[#59b9c6] text-xl">${ruby}</div>` : `<div class="opacity-30 text-[10px] italic">Try again...</div>`;
+            box.innerHTML = (val === ans) ? `<div class="text-sm flex items-center gap-2 font-jp"><i data-lucide="sparkle" class="w-3 h-3"></i> ${ruby}</div>` : `<div class="text-[10px] opacity-30 italic">Try again</div>`;
             box.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function resetMemory() {
+            if(confirm("Reset learned history?")) { localStorage.removeItem('island_seen_it'); seenIt.clear(); location.reload(); }
         }
 
         function exportTxt() {
-            if(sessionData.length === 0) return;
             const content = sessionData.map(d => `[${d.time}] ${d.type}: ${d.content}`).join('\n');
             const blob = new Blob([content], {type: 'text/plain'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Session_Log.txt`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Island_Log.txt`; a.click();
         }
-
-        function clearSession() { document.getElementById('record-list').innerHTML=''; sessionData=[]; }
     </script>
 </body>
 </html>
