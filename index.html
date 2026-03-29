@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kotoba's - Japanese Learning Island</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --color-ink: #0A0A0A;
+            --font-jp: 'Noto Serif JP', serif;
+            --font-en-display: 'Playfair Display', serif;
+        }
+
+        body { font-family: 'Playfair Display', 'Noto Serif JP', serif; color: var(--color-ink); margin: 0; background-color: #FFFFFF; height: 100vh; width: 100vw; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .noise-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.1; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+        
+        .glass-panel-deep { background: rgba(245, 245, 245, 0.4); backdrop-filter: blur(32px); border: 1px solid rgba(220, 220, 220, 0.6); box-shadow: 0 24px 48px -12px rgba(0,0,0,0.05); }
+        .glass-panel-light { background: rgba(250, 250, 250, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(230, 230, 230, 0.8); }
+        .content-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(240, 240, 240, 1); transition: all 0.3s ease; }
+        
+        .view-section { display: none; height: 100%; flex-direction: column; animation: sectionIn 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        .view-section.active { display: flex; }
+        @keyframes sectionIn { from { opacity: 0; transform: translateY(10px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+
+        h1, h2, h3 { font-family: var(--font-en-display); font-style: italic; font-weight: 500; }
+        .font-jp, ruby, rt { font-family: var(--font-jp) !important; }
+
+        .journey-node { position: relative; padding-left: 20px; padding-bottom: 24px; border-left: 1px solid rgba(0,0,0,0.08); margin-left: 5px; cursor: pointer; }
+        .journey-node::after { content: ''; position: absolute; left: -4px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: #fff; border: 1.5px solid var(--color-ink); }
+
+        .answer-area { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease; }
+        .answer-area.revealed { grid-template-rows: 1fr; }
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+
+        /* Custom Radio Style */
+        .type-selector input:checked + span { background: #000; color: #fff; border-color: #000; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="noise-overlay"></div>
+
+    <div class="relative z-10 w-full h-full max-w-[1600px] flex p-4 md:p-8 gap-6">
+
+        <aside class="w-[280px] lg:w-[300px] flex-shrink-0 flex flex-col gap-8 glass-panel-deep rounded-[2.5rem] p-8 h-full hidden md:flex">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+                <h1 class="text-3xl tracking-tight">Kotoba's</h1>
+            </div>
+
+            <nav class="flex flex-col gap-6">
+                <div class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 mb-2">Navigation</div>
+                <div class="flex flex-col gap-5">
+                    <div onclick="switchView('map-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-100 font-medium active"><i data-lucide="map" class="w-4 h-4"></i> Discovery</div>
+                    <div onclick="switchView('idea-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="compass" class="w-4 h-4"></i> Inspiration</div>
+                    <div onclick="switchView('quiz-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="zap" class="w-4 h-4"></i> Challenge</div>
+                </div>
+            </nav>
+
+            <div class="flex-1 flex flex-col min-h-0">
+                <div class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 mb-6">Recent Journey</div>
+                <div id="history-list" class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1"></div>
+            </div>
+            
+            <div class="pt-6 border-t border-black/5">
+                <div class="bg-white/40 p-4 rounded-2xl border border-black/5">
+                    <label class="text-[9px] uppercase tracking-widest font-bold opacity-40 mb-2 block">Settings</label>
+                    <input id="api-key-input" type="password" placeholder="Input your key" onchange="saveKey(this.value)"
+                           class="w-full bg-white/60 rounded-xl px-3 py-2 text-xs outline-none border border-transparent focus:border-black/20 transition-all font-mono">
+                    <div class="flex items-center gap-2 mt-3 text-[9px] uppercase tracking-widest font-bold opacity-30">
+                        <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                        <span id="status-text">System Ready</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full glass-panel-light rounded-[2.5rem] overflow-hidden relative">
+            
+            <section id="map-view" class="view-section active p-10">
+                <header class="mb-10 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-5xl mb-3">Discovery</h2>
+                        <p class="opacity-40 text-sm italic">Unveil the hidden connections of words.</p>
+                    </div>
+                    <div class="relative w-72">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30"></i>
+                        <input id="map-search" type="text" placeholder="Search (e.g. 永遠)" onkeypress="if(event.key==='Enter') handleMapSearch()" 
+                               class="w-full bg-white/80 rounded-2xl border border-gray-100 pl-11 pr-4 py-3.5 text-sm outline-none focus:shadow-lg transition-all">
+                    </div>
+                </header>
+                <div id="map-area" class="flex-1 overflow-y-auto custom-scrollbar pr-4">
+                    <div id="map-nodes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    <div id="example-list" class="mt-12 space-y-6"></div>
+                </div>
+            </section>
+
+            <section id="idea-view" class="view-section p-10">
+                <div class="max-w-2xl mx-auto h-full flex flex-col justify-center">
+                    <h2 class="text-6xl text-center mb-6">Inspiration</h2>
+                    <p class="text-center opacity-40 mb-12 text-sm uppercase tracking-[0.2em]">Seek guidance for your next path</p>
+                    <div class="content-card rounded-[3rem] p-12 text-center mb-10">
+                        <div class="flex justify-center gap-6 mb-10">
+                            <label class="flex items-center gap-2 cursor-pointer opacity-60 hover:opacity-100 transition-all font-medium">
+                                <input type="checkbox" name="focus" value="單詞" checked class="w-4 h-4 accent-black"> Vocabulary
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer opacity-60 hover:opacity-100 transition-all font-medium">
+                                <input type="checkbox" name="focus" value="語法" class="w-4 h-4 accent-black"> Grammar
+                            </label>
+                        </div>
+                        <button onclick="generateIdea()" id="idea-btn" class="bg-black text-white px-12 py-4 rounded-full text-[11px] font-bold tracking-widest hover:scale-105 transition-all shadow-xl">SEEK INSPIRATION</button>
+                    </div>
+                    <div id="idea-result" class="hidden animate-slide-up bg-black text-white rounded-[3rem] p-12 text-center relative overflow-hidden">
+                        <div class="relative z-10">
+                            <p id="idea-reason" class="text-2xl mb-8 opacity-70 leading-relaxed"></p>
+                            <div id="idea-keyword" onclick="handleMapSearch(this.innerText)" class="inline-block px-10 py-4 bg-white text-black rounded-full font-jp text-2xl cursor-pointer hover:bg-gray-200 transition-all">Keyword</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quiz-view" class="view-section p-10">
+                <header class="mb-10">
+                    <h2 class="text-5xl mb-6">Challenge</h2>
+                    <div class="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+                        <div class="flex gap-3 type-selector">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="quiz-type" value="單詞" checked class="hidden">
+                                <span class="px-5 py-2 rounded-full border border-black/10 text-[10px] font-bold tracking-widest uppercase transition-all block">Vocabulary</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="quiz-type" value="語法" class="hidden">
+                                <span class="px-5 py-2 rounded-full border border-black/10 text-[10px] font-bold tracking-widest uppercase transition-all block">Grammar</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="quiz-type" value="文化" class="hidden">
+                                <span class="px-5 py-2 rounded-full border border-black/10 text-[10px] font-bold tracking-widest uppercase transition-all block">Culture</span>
+                            </label>
+                        </div>
+                        <button onclick="generateQuiz()" id="quiz-gen-btn" class="bg-black text-white px-8 py-3 rounded-full text-[10px] font-bold tracking-widest hover:opacity-80 transition-all uppercase shadow-lg">Generate Challenge</button>
+                    </div>
+                </header>
+                <div id="quiz-grid" class="flex-1 overflow-y-auto custom-scrollbar grid grid-cols-1 xl:grid-cols-2 gap-8 content-start pb-20">
+                    <div id="quiz-empty" class="col-span-full py-20 text-center opacity-20 italic">Select a type and generate your first challenge...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let historyPath = [];
+
+        window.onload = () => {
+            const savedKey = localStorage.getItem('deepseek_key');
+            if(savedKey) document.getElementById('api-key-input').value = savedKey;
+        };
+
+        function saveKey(val) {
+            localStorage.setItem('deepseek_key', val);
+        }
+
+        function switchView(id, el) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('opacity-100', 'font-medium', 'active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('opacity-100', 'font-medium', 'active');
+        }
+
+        function setStatus(text, loading) {
+            document.getElementById('status-text').innerText = text;
+            document.getElementById('status-dot').className = loading ? "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" : "w-1.5 h-1.5 rounded-full bg-green-400";
+        }
+
+        async function callAI(prompt) {
+            const key = document.getElementById('api-key-input').value;
+            if(!key) { alert("Please Input your key in the settings box!"); return null; }
+            setStatus('Thinking...', true);
+            try {
+                const res = await fetch('https://api.deepseek.com/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({ model: "deepseek-chat", messages: [{role: "system", content: prompt}], response_format: { type: "json_object" } })
+                });
+                const data = await res.json();
+                setStatus('System Ready', false);
+                return JSON.parse(data.choices[0].message.content);
+            } catch (e) { setStatus('API Error', false); return null; }
+        }
+
+        async function handleMapSearch(val) {
+            const query = val || document.getElementById('map-search').value;
+            if(!query) return;
+            switchView('map-view', document.querySelector('.nav-link'));
+            const data = await callAI(`Return JSON ONLY. 6 unique Japanese words related to "${query}". Format: {"c":{"w":"Kanji","r":"Reading","m":"Meaning"},"ext":[{"w":"Kanji","r":"Reading","m":"Meaning"}]}`);
+            if(!data) return;
+            renderNodes(data);
+            updateJourney(data.c);
+        }
+
+        function renderNodes(data) {
+            const container = document.getElementById('map-nodes');
+            container.innerHTML = '';
+            [data.c, ...data.ext].forEach((node, i) => {
+                const card = document.createElement('div');
+                card.className = `content-card p-8 rounded-[2.5rem] cursor-pointer hover:scale-[1.02] transition-all ${i===0 ? 'border-black ring-1 ring-black/5' : ''}`;
+                card.onclick = () => handleMapSearch(node.w);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4 opacity-30 text-[9px] uppercase tracking-widest font-bold">
+                        <span>${i===0 ? 'Main' : 'Related'}</span>
+                        <i data-lucide="plus-circle" class="w-4 h-4" onclick="event.stopPropagation(); fetchExample('${node.w}')"></i>
+                    </div>
+                    <div class="font-jp text-3xl mb-3"><ruby>${node.w}<rt>${node.r}</rt></ruby></div>
+                    <div class="text-sm opacity-50 italic">${node.m}</div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        async function fetchExample(word) {
+            const data = await callAI(`Return JSON ONLY. One N1 Japanese sentence for "${word}". Use <ruby>. Format: {"jp":"...","zh":"..."}`);
+            if(!data) return;
+            const card = document.createElement('div');
+            card.className = "content-card p-10 rounded-[2.5rem] border-dashed text-center animate-slide-up";
+            card.innerHTML = `<div class="text-[10px] opacity-30 uppercase tracking-widest mb-4">Example: ${word}</div><div class="font-jp text-2xl leading-loose mb-4">${data.jp}</div><div class="text-sm opacity-40 italic">${data.zh}</div>`;
+            document.getElementById('example-list').prepend(card);
+        }
+
+        async function generateIdea() {
+            const btn = document.getElementById('idea-btn');
+            btn.innerText = "CONSULTING...";
+            const learned = historyPath.map(i => i.w).join(',');
+            const data = await callAI(`Suggest one Japanese study topic, avoid [${learned}]. JSON: {"reason":"Eng reason","keyword":"Jp word"}`);
+            if(data) {
+                document.getElementById('idea-reason').innerText = data.reason;
+                document.getElementById('idea-keyword').innerText = data.keyword;
+                document.getElementById('idea-result').classList.remove('hidden');
+            }
+            btn.innerText = "SEEK INSPIRATION";
+        }
+
+        async function generateQuiz() {
+            const type = document.querySelector('input[name="quiz-type"]:checked').value;
+            const words = historyPath.slice(0, 5).map(i => i.w).join(',') || "心、空、静寂";
+            const btn = document.getElementById('quiz-gen-btn');
+            
+            btn.innerText = "GENERATING...";
+            btn.disabled = true;
+
+            const prompt = `Create 2 Japanese challenges about "${type}". 
+            If "單詞": context based on [${words}]. 
+            If "語法": focus on N2/N1 grammar. 
+            If "文化": focus on unique traditions/concepts. 
+            JSON format: {"quizzes":[{"q":"Question Text","h":"Hint/Context","a":"<ruby>Answer<rt>Reading</rt></ruby>"}]}`;
+            
+            const data = await callAI(prompt);
+            btn.innerText = "GENERATE CHALLENGE";
+            btn.disabled = false;
+
+            if(!data) return;
+
+            document.getElementById('quiz-empty')?.remove();
+            const grid = document.getElementById('quiz-grid');
+            
+            data.quizzes.forEach(q => {
+                const article = document.createElement('article');
+                article.className = "content-card rounded-[2.5rem] p-8 animate-slide-up";
+                article.innerHTML = `
+                    <div class="flex justify-between items-start mb-8">
+                        <span class="bg-black text-white px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase">${type} Challenge</span>
+                        <span class="text-[10px] opacity-30 italic">${q.h}</span>
+                    </div>
+                    <h3 class="text-2xl mb-8 leading-relaxed">${q.q}</h3>
+                    <button onclick="toggleReveal(this)" class="w-full py-4 rounded-2xl border border-gray-100 text-[11px] font-bold tracking-widest uppercase flex justify-between px-6 hover:bg-gray-50 transition-all">
+                        <span>Reveal Answer</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                    </button>
+                    <div class="answer-area">
+                        <div class="overflow-hidden">
+                            <div class="mt-4 p-8 bg-gray-50 rounded-2xl text-center">
+                                <div class="font-jp text-3xl mb-4">${q.a}</div>
+                                <button onclick="speak('${q.a}')" class="text-[9px] font-bold opacity-30 hover:opacity-100 uppercase flex items-center gap-2 mx-auto">
+                                    <i data-lucide="volume-2" class="w-4 h-4"></i> Speak
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.prepend(article);
+                lucide.createIcons();
+            });
+        }
+
+        function updateJourney(item) {
+            if(!historyPath.find(i => i.w === item.w)) {
+                historyPath.unshift(item);
+                const container = document.getElementById('history-list');
+                const div = document.createElement('div');
+                div.className = "journey-node group";
+                div.onclick = () => handleMapSearch(item.w);
+                div.innerHTML = `<div class="font-jp text-lg leading-none mb-1 group-hover:text-black transition-colors">${item.w}</div><div class="text-[10px] opacity-30">${item.m}</div>`;
+                container.prepend(div);
+            }
+        }
+
+        function toggleReveal(btn) {
+            const area = btn.nextElementSibling;
+            const isRev = area.classList.toggle('revealed');
+            btn.querySelector('span').innerText = isRev ? 'Hide Answer' : 'Reveal Answer';
+            btn.querySelector('i').style.transform = isRev ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function speak(html) {
+            window.speechSynthesis.cancel();
+            const text = html.replace(/<rt>.*?<\/rt>|<\/?ruby>/g, '');
+            const u = new SpeechSynthesisUtterance(text); u.lang = 'ja-JP'; u.rate = 0.85;
+            window.speechSynthesis.speak(u);
+        }
+
+        // --- BG Animation ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, blobs = [], time = 0;
+        function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
+        class Blob {
+            constructor() { this.reset(); this.baseRadius = this.radius; this.phase = Math.random() * Math.PI * 2; }
+            reset() { this.x = Math.random() * width; this.y = Math.random() * height; this.radius = Math.random() * (width * 0.3) + (width * 0.1); this.vx = (Math.random() - 0.5) * 0.1; this.vy = (Math.random() - 0.5) * 0.1; }
+            update() { this.x += this.vx; this.y += this.vy; this.currentRadius = this.baseRadius + Math.sin(time * 0.0005 + this.phase) * (this.baseRadius * 0.05); if(this.x<0 || this.x>width) this.vx*=-1; if(this.y<0 || this.y>height) this.vy*=-1; }
+            draw() { const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.currentRadius); g.addColorStop(0, 'rgba(242,242,242,0.8)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.beginPath(); ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill(); }
+        }
+        function animate() { time += 16; ctx.clearRect(0,0,width,height); ctx.filter = 'blur(100px)'; blobs.forEach(b => { b.update(); b.draw(); }); requestAnimationFrame(animate); }
+        window.addEventListener('resize', resize); resize();
+        for(let i=0; i<6; i++) blobs.push(new Blob());
+        animate();
+    </script>
+</body>
+</html>
