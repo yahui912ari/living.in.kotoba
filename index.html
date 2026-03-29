@@ -24,51 +24,49 @@
             .view-section { min-height: 500px; }
         }
 
+        .nav-link { opacity: 0.4; transition: 0.3s; }
         .nav-active { color: var(--theme); border-right: 2px solid var(--theme); opacity: 1 !important; }
         .level-btn.active { background: var(--theme); color: white; }
         
-        .record-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; }
-        .tag-discovery { color: #59b9c6; }
-        .tag-inspiration { color: #8eb9c6; }
-        .tag-challenge { color: #4a9fa9; }
-
-        .btn-primary { border: 1px solid var(--theme); color: var(--theme); border-radius: 999px; transition: 0.3s; background: transparent; }
+        .record-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; font-weight: 300; }
+        .btn-primary { border: 1px solid var(--theme); color: var(--theme); border-radius: 999px; transition: 0.3s; background: transparent; font-weight: 400; }
         .btn-primary:hover { background: var(--theme); color: white; }
         
-        input { color: var(--theme); }
-        input::placeholder { color: var(--theme); opacity: 0.4; }
+        input { color: var(--theme); font-weight: 300; }
+        input::placeholder { color: var(--theme); opacity: 0.3; }
         .font-jp { font-family: var(--font-jp); font-weight: 300; }
-        ruby rt { color: #888; font-weight: 400; }
+        ruby rt { color: #888; font-weight: 300; font-size: 0.6em; }
     </style>
 </head>
 <body class="flex items-center justify-center">
 
     <div class="main-container relative z-10 w-full h-full max-w-[1800px] flex p-6 gap-6">
 
-        <aside class="w-[220px] flex-shrink-0 flex flex-col gap-8 glass p-8 h-full hidden lg:flex">
+        <aside class="w-[220px] flex-shrink-0 flex flex-col gap-10 glass p-8 h-full hidden lg:flex">
             <div class="flex items-center gap-3">
-                <i data-lucide="wind" class="text-[#59b9c6] w-6 h-6"></i>
+                <i data-lucide="sparkle" class="w-5 h-5"></i>
                 <h1 class="text-xl italic">Kotoba's</h1>
             </div>
-            <nav class="flex flex-col gap-4">
-                <div onclick="switchView('map-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all nav-active"><i data-lucide="map" class="w-4 h-4"></i> Discovery</div>
-                <div onclick="switchView('idea-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="compass" class="w-4 h-4"></i> Inspiration</div>
-                <div onclick="switchView('quiz-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="zap" class="w-4 h-4"></i> Challenge</div>
+            <nav class="flex flex-col gap-6">
+                <div onclick="switchView('map-view', this)" class="nav-link flex items-center gap-4 cursor-pointer nav-active"><i data-lucide="sparkle" class="w-4 h-4"></i> Discovery</div>
+                <div onclick="switchView('idea-view', this)" class="nav-link flex items-center gap-4 cursor-pointer"><i data-lucide="sparkle" class="w-4 h-4"></i> Inspiration</div>
+                <div onclick="switchView('quiz-view', this)" class="nav-link flex items-center gap-4 cursor-pointer"><i data-lucide="sparkle" class="w-4 h-4"></i> Challenge</div>
             </nav>
             <div class="mt-auto">
                 <input id="api-key" type="password" placeholder="Input your key..." onchange="localStorage.setItem('ds_key', this.value)" 
-                       class="w-full bg-white/50 rounded-xl px-4 py-2 text-xs outline-none border border-transparent focus:border-[#59b9c6]/30 transition-all">
+                       class="w-full bg-white/40 rounded-xl px-4 py-2 text-xs outline-none border border-transparent focus:border-[#59b9c6]/20">
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col h-full glass overflow-hidden border-none shadow-sm">
+        <main class="flex-1 flex flex-col h-full glass overflow-hidden border-none">
             
             <section id="map-view" class="view-section active p-8 flex flex-col h-full">
                 <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-                    <div><h2 class="text-4xl italic mb-1">Discovery</h2><p class="opacity-50 text-xs font-jp">言葉の細部を探索する</p></div>
+                    <div><h2 class="text-4xl italic mb-1">Discovery</h2><p class="opacity-40 text-[10px] font-jp tracking-widest uppercase">Explore the connections</p></div>
                     <div class="relative w-full md:w-72">
+                        <i data-lucide="sparkle" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 opacity-30"></i>
                         <input id="search-in" type="text" placeholder="Explore word..." onkeypress="if(event.key==='Enter') searchWord()" 
-                               class="w-full bg-white/60 border border-[#59b9c6]/10 rounded-2xl pl-6 pr-4 py-3 text-sm outline-none focus:bg-white transition-all">
+                               class="w-full bg-white/50 border border-[#59b9c6]/10 rounded-2xl pl-10 pr-4 py-3 text-sm outline-none focus:bg-white transition-all">
                     </div>
                 </header>
                 <div class="flex-1 overflow-y-auto custom-scroll pr-2">
@@ -78,15 +76,16 @@
             </section>
 
             <section id="idea-view" class="view-section hidden p-10 flex flex-col items-center justify-center h-full text-center">
+                <i data-lucide="sparkle" class="w-8 h-8 mb-6 opacity-20"></i>
                 <h2 class="text-5xl italic mb-12">Inspiration</h2>
-                <div class="flex gap-4 mb-10" id="idea-types">
-                    <button onclick="selectType(this, 'Vocabulary')" class="px-8 py-2 rounded-full border border-[#59b9c6]/30 text-xs active bg-[#59b9c6] text-white">語彙</button>
-                    <button onclick="selectType(this, 'Grammar')" class="px-8 py-2 rounded-full border border-[#59b9c6]/30 text-xs">文法</button>
-                    <button onclick="selectType(this, 'Culture')" class="px-8 py-2 rounded-full border border-[#59b9c6]/30 text-xs">文化</button>
+                <div class="flex gap-4 mb-10">
+                    <button onclick="selectType(this, 'Vocabulary')" class="type-btn px-8 py-2 rounded-full border border-[#59b9c6]/20 text-xs bg-[#59b9c6] text-white">語彙</button>
+                    <button onclick="selectType(this, 'Grammar')" class="type-btn px-8 py-2 rounded-full border border-[#59b9c6]/20 text-xs">文法</button>
+                    <button onclick="selectType(this, 'Culture')" class="type-btn px-8 py-2 rounded-full border border-[#59b9c6]/20 text-xs">文化</button>
                 </div>
-                <button onclick="getIdea()" id="idea-btn" class="btn-primary px-16 py-4 text-xs tracking-widest uppercase mb-12">Seek</button>
+                <button onclick="getIdea()" id="idea-btn" class="btn-primary px-16 py-3 text-[10px] tracking-widest uppercase mb-12">Seek</button>
                 <div id="idea-res" class="hidden animate-fade-in">
-                    <div id="idea-word" onclick="searchWord(this.innerText)" class="text-4xl font-jp border-b border-[#59b9c6] pb-2 cursor-pointer hover:opacity-60 transition-all inline-block">...</div>
+                    <div id="idea-word" onclick="searchWord(this.innerText)" class="text-4xl font-jp border-b border-[#59b9c6]/30 pb-2 cursor-pointer hover:opacity-50 transition-all inline-block">...</div>
                 </div>
             </section>
 
@@ -96,15 +95,15 @@
                         <h2 class="text-4xl italic">Challenge</h2>
                         <button onclick="getQuiz()" id="quiz-btn" class="btn-primary px-8 py-2 text-[10px] uppercase">New Task</button>
                     </div>
-                    <div class="flex flex-wrap gap-4 items-center border-b border-[#59b9c6]/10 pb-4">
+                    <div class="flex flex-wrap gap-4 items-center border-b border-[#59b9c6]/10 pb-6">
                         <div class="flex gap-2" id="lv-selector">
-                            <button onclick="currentLv='N5'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N5</button>
-                            <button onclick="currentLv='N4'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N4</button>
-                            <button onclick="currentLv='N3'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N3</button>
-                            <button onclick="currentLv='N2'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px] active">N2</button>
-                            <button onclick="currentLv='N1'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N1</button>
+                            <button onclick="currentLv='N5'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N5</button>
+                            <button onclick="currentLv='N4'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N4</button>
+                            <button onclick="currentLv='N3'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N3</button>
+                            <button onclick="currentLv='N2'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px] active">N2</button>
+                            <button onclick="currentLv='N1'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/10 text-[10px]">N1</button>
                         </div>
-                        <select id="quiz-type" class="ml-auto bg-transparent text-[10px] uppercase outline-none font-jp">
+                        <select id="quiz-type" class="ml-auto bg-transparent text-[10px] uppercase outline-none font-jp opacity-60">
                             <option value="Vocabulary">語彙</option><option value="Grammar">文法</option><option value="Culture">文化</option>
                         </select>
                     </div>
@@ -113,13 +112,13 @@
             </section>
         </main>
 
-        <aside class="w-[280px] flex-shrink-0 flex flex-col glass p-6 h-full border-none hidden xl:flex">
-            <div class="flex items-center justify-between mb-8 opacity-60">
-                <div class="flex items-center gap-2 text-sm"><i data-lucide="list" class="w-4 h-4"></i> Records</div>
-                <button onclick="exportTxt()" class="hover:text-black transition-all"><i data-lucide="download" class="w-4 h-4"></i></button>
+        <aside class="w-[280px] flex-shrink-0 flex flex-col glass p-8 h-full border-none hidden xl:flex">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-2 text-xs opacity-50 uppercase tracking-widest"><i data-lucide="sparkle" class="w-3 h-3"></i> Records</div>
+                <button onclick="exportTxt()" class="hover:opacity-50 transition-all"><i data-lucide="sparkle" class="w-4 h-4"></i></button>
             </div>
-            <div id="record-list" class="flex-1 overflow-y-auto custom-scroll space-y-5"></div>
-            <button onclick="clearSession()" class="mt-6 text-[9px] uppercase tracking-widest opacity-20 hover:opacity-100 text-center w-full">Reset Session</button>
+            <div id="record-list" class="flex-1 overflow-y-auto custom-scroll space-y-6"></div>
+            <button onclick="clearSession()" class="mt-8 text-[9px] uppercase tracking-widest opacity-20 hover:opacity-100 text-center">Reset Session</button>
         </aside>
 
     </div>
@@ -145,7 +144,7 @@
 
         function selectType(btn, t) {
             currentType = t;
-            document.querySelectorAll('#idea-types button').forEach(b => b.classList.remove('bg-[#59b9c6]', 'text-white'));
+            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('bg-[#59b9c6]', 'text-white'));
             btn.classList.add('bg-[#59b9c6]', 'text-white');
         }
 
@@ -167,8 +166,8 @@
             sessionData.push({time, type, content});
             const list = document.getElementById('record-list');
             const div = document.createElement('div');
-            div.className = "text-xs border-l border-[#59b9c6]/20 pl-4 py-1 animate-fade-in";
-            div.innerHTML = `<div class="record-tag tag-${type.toLowerCase()} mb-2 inline-block scale-75 origin-left">${type}</div>
+            div.className = "text-[11px] border-l border-[#59b9c6]/20 pl-4 py-1 animate-fade-in";
+            div.innerHTML = `<div class="record-tag mb-2 inline-block scale-75 origin-left opacity-60">${type}</div>
                              <div class="font-jp opacity-70 leading-relaxed">${content}</div>`;
             list.prepend(div);
         }
@@ -180,11 +179,11 @@
             const grid = document.getElementById('nodes-grid'); grid.innerHTML = '';
             [res.c, ...res.ext].forEach(n => {
                 const div = document.createElement('div');
-                div.className = "card p-6 cursor-pointer hover:border-[#59b9c6]/40 relative group";
+                div.className = "card p-6 cursor-pointer hover:border-[#59b9c6]/30 relative group";
                 div.onclick = () => searchWord(n.w);
-                div.innerHTML = `<div class="absolute right-4 top-4 opacity-0 group-hover:opacity-40" onclick="event.stopPropagation(); getExample('${n.w}')"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                div.innerHTML = `<div class="absolute right-4 top-4 opacity-0 group-hover:opacity-40" onclick="event.stopPropagation(); getExample('${n.w}')"><i data-lucide="sparkle" class="w-3 h-3"></i></div>
                                  <div class="font-jp text-xl mb-1"><ruby>${n.w}<rt>${n.r}</rt></ruby></div>
-                                 <p class="text-[10px] opacity-40 font-jp tracking-wider">${n.m}</p>`;
+                                 <p class="text-[10px] opacity-30 font-jp tracking-wider">${n.m}</p>`;
                 grid.appendChild(div);
             });
             lucide.createIcons(); addRec("Discovery", res.c.w);
@@ -194,7 +193,7 @@
             const res = await ai(`JSON. N1 sentence for "${w}". {"jp":"...","zh":"..."}`); if(!res) return;
             const div = document.createElement('div');
             div.className = "card p-8 border-dashed border-[#59b9c6]/20 text-center animate-slide-up";
-            div.innerHTML = `<p class="font-jp text-lg mb-2">${res.jp}</p><p class="text-[10px] opacity-30 italic font-jp">${res.zh}</p>`;
+            div.innerHTML = `<p class="font-jp text-lg mb-2 text-[#444]">${res.jp}</p><p class="text-[10px] opacity-30 italic font-jp">${res.zh}</p>`;
             document.getElementById('example-area').prepend(div);
         }
 
@@ -208,14 +207,14 @@
             const res = await ai(`JSON. JLPT ${currentLv} quiz for ${type}. Use "[BLANK]". {"q":"Sentence with [BLANK]","h":"Hint","a":"CorrectAnswer","r":"<ruby>Ans<rt>...</rt></ruby>"}`);
             if(!res || used.has(res.a)) return getQuiz(); used.add(res.a);
             const id = Date.now();
-            const qHtml = res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-2 w-28 border-b border-[#59b9c6] bg-transparent text-center outline-none focus:border-b-2 transition-all" placeholder="?">`);
+            const qHtml = res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-2 w-28 border-b border-[#59b9c6]/40 bg-transparent text-center outline-none focus:border-b-2 transition-all font-jp" placeholder="?">`);
             const div = document.createElement('div');
-            div.className = "card p-10 relative overflow-hidden";
-            div.innerHTML = `<div class="absolute right-6 top-6 opacity-20 text-[10px]">${currentLv}</div>
-                             <div class="text-2xl font-jp mb-10 leading-relaxed text-center">${qHtml}</div>
+            div.className = "card p-12 relative overflow-hidden";
+            div.innerHTML = `<div class="absolute right-6 top-6 opacity-20 text-[10px] tracking-widest">${currentLv}</div>
+                             <div class="text-2xl font-jp mb-10 leading-relaxed text-center text-[#444]">${qHtml}</div>
                              <div class="flex justify-center flex-col items-center gap-6">
                                 <button onclick="evalQuiz('${id}','${res.a}','${res.r.replace(/'/g,"\\'")}')" class="btn-primary px-12 py-2 text-[10px] tracking-widest uppercase">Evaluate</button>
-                                <div id="res-${id}" class="hidden text-center font-jp animate-fade-in"></div>
+                                <div id="res-${id}" class="hidden text-center font-jp animate-fade-in pt-4"></div>
                              </div>`;
             document.getElementById('quiz-container').prepend(div);
             addRec("Challenge", `${currentLv} Task`);
@@ -223,7 +222,7 @@
 
         function evalQuiz(id, ans, ruby) {
             const val = document.getElementById(`in-${id}`).value.trim(); const box = document.getElementById(`res-${id}`);
-            box.innerHTML = (val === ans) ? `<div class="text-[#59b9c6] text-xl">${ruby}</div>` : `<div class="opacity-30 text-xs italic">Try again...</div>`;
+            box.innerHTML = (val === ans) ? `<div class="text-[#59b9c6] text-xl">${ruby}</div>` : `<div class="opacity-30 text-[10px] italic">Try again...</div>`;
             box.classList.remove('hidden');
         }
 
@@ -231,7 +230,7 @@
             if(sessionData.length === 0) return;
             const content = sessionData.map(d => `[${d.time}] ${d.type}: ${d.content}`).join('\n');
             const blob = new Blob([content], {type: 'text/plain'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Session.txt`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Session_Log.txt`; a.click();
         }
 
         function clearSession() { document.getElementById('record-list').innerHTML=''; sessionData=[]; }
