@@ -1,346 +1,240 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kotoba's - Japanese Learning Island</title>
+    <title>Kotoba's Island</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --color-ink: #0A0A0A;
-            --font-jp: 'Noto Serif JP', serif;
-            --font-en-display: 'Playfair Display', serif;
+        :root { --theme: #59b9c6; --bg: #eaedf7; --font-jp: 'Noto Serif JP', serif; }
+        body { font-family: 'Playfair Display', var(--font-jp); background: var(--bg); color: var(--theme); height: 100vh; overflow: hidden; font-weight: 400; }
+        
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(89, 185, 198, 0.15); border-radius: 2rem; }
+        .card { background: rgba(255, 255, 255, 0.9); border-radius: 1.5rem; transition: all 0.3s ease; border: 1px solid rgba(89, 185, 198, 0.1); }
+        
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(89, 185, 198, 0.2); border-radius: 10px; }
+
+        @media (max-width: 1024px) {
+            body { overflow-y: auto; height: auto; }
+            .main-container { flex-direction: column; height: auto; padding: 1rem; gap: 1rem; }
+            aside, main { width: 100% !important; height: auto !important; }
+            .view-section { min-height: 500px; }
         }
 
-        body { font-family: 'Playfair Display', 'Noto Serif JP', serif; color: var(--color-ink); margin: 0; background-color: #FFFFFF; height: 100vh; width: 100vw; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-        .noise-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.1; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+        .nav-active { color: var(--theme); border-right: 2px solid var(--theme); opacity: 1 !important; }
+        .level-btn.active { background: var(--theme); color: white; }
         
-        .glass-panel-deep { background: rgba(245, 245, 245, 0.4); backdrop-filter: blur(32px); border: 1px solid rgba(220, 220, 220, 0.6); box-shadow: 0 24px 48px -12px rgba(0,0,0,0.05); }
-        .glass-panel-light { background: rgba(250, 250, 250, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(230, 230, 230, 0.8); }
-        .content-card { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(240, 240, 240, 1); transition: all 0.3s ease; }
+        .record-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; }
+        .tag-discovery { color: #59b9c6; }
+        .tag-inspiration { color: #8eb9c6; }
+        .tag-challenge { color: #4a9fa9; }
+
+        .btn-primary { border: 1px solid var(--theme); color: var(--theme); border-radius: 999px; transition: 0.3s; background: transparent; }
+        .btn-primary:hover { background: var(--theme); color: white; }
         
-        .view-section { display: none; height: 100%; flex-direction: column; animation: sectionIn 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-        .view-section.active { display: flex; }
-        @keyframes sectionIn { from { opacity: 0; transform: translateY(10px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
-
-        h1, h2, h3 { font-family: var(--font-en-display); font-style: italic; font-weight: 500; }
-        .font-jp, ruby, rt { font-family: var(--font-jp) !important; }
-
-        .journey-node { position: relative; padding-left: 20px; padding-bottom: 24px; border-left: 1px solid rgba(0,0,0,0.08); margin-left: 5px; cursor: pointer; }
-        .journey-node::after { content: ''; position: absolute; left: -4px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: #fff; border: 1.5px solid var(--color-ink); }
-
-        .answer-area { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease; }
-        .answer-area.revealed { grid-template-rows: 1fr; }
-        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-
-        /* Custom Radio Style */
-        .type-selector input:checked + span { background: #000; color: #fff; border-color: #000; }
+        input { color: var(--theme); }
+        input::placeholder { color: var(--theme); opacity: 0.4; }
+        .font-jp { font-family: var(--font-jp); font-weight: 300; }
+        ruby rt { color: #888; font-weight: 400; }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center">
 
-    <canvas id="bg-canvas"></canvas>
-    <div class="noise-overlay"></div>
+    <div class="main-container relative z-10 w-full h-full max-w-[1800px] flex p-6 gap-6">
 
-    <div class="relative z-10 w-full h-full max-w-[1600px] flex p-4 md:p-8 gap-6">
-
-        <aside class="w-[280px] lg:w-[300px] flex-shrink-0 flex flex-col gap-8 glass-panel-deep rounded-[2.5rem] p-8 h-full hidden md:flex">
+        <aside class="w-[220px] flex-shrink-0 flex flex-col gap-8 glass p-8 h-full hidden lg:flex">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
-                <h1 class="text-3xl tracking-tight">Kotoba's</h1>
+                <i data-lucide="wind" class="text-[#59b9c6] w-6 h-6"></i>
+                <h1 class="text-xl italic">Kotoba's</h1>
             </div>
-
-            <nav class="flex flex-col gap-6">
-                <div class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 mb-2">Navigation</div>
-                <div class="flex flex-col gap-5">
-                    <div onclick="switchView('map-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-100 font-medium active"><i data-lucide="map" class="w-4 h-4"></i> Discovery</div>
-                    <div onclick="switchView('idea-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="compass" class="w-4 h-4"></i> Inspiration</div>
-                    <div onclick="switchView('quiz-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="zap" class="w-4 h-4"></i> Challenge</div>
-                </div>
+            <nav class="flex flex-col gap-4">
+                <div onclick="switchView('map-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all nav-active"><i data-lucide="map" class="w-4 h-4"></i> Discovery</div>
+                <div onclick="switchView('idea-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="compass" class="w-4 h-4"></i> Inspiration</div>
+                <div onclick="switchView('quiz-view', this)" class="nav-link flex items-center gap-4 cursor-pointer opacity-40 hover:opacity-100 transition-all"><i data-lucide="zap" class="w-4 h-4"></i> Challenge</div>
             </nav>
-
-            <div class="flex-1 flex flex-col min-h-0">
-                <div class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 mb-6">Recent Journey</div>
-                <div id="history-list" class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1"></div>
-            </div>
-            
-            <div class="pt-6 border-t border-black/5">
-                <div class="bg-white/40 p-4 rounded-2xl border border-black/5">
-                    <label class="text-[9px] uppercase tracking-widest font-bold opacity-40 mb-2 block">Settings</label>
-                    <input id="api-key-input" type="password" placeholder="Input your key" onchange="saveKey(this.value)"
-                           class="w-full bg-white/60 rounded-xl px-3 py-2 text-xs outline-none border border-transparent focus:border-black/20 transition-all font-mono">
-                    <div class="flex items-center gap-2 mt-3 text-[9px] uppercase tracking-widest font-bold opacity-30">
-                        <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
-                        <span id="status-text">System Ready</span>
-                    </div>
-                </div>
+            <div class="mt-auto">
+                <input id="api-key" type="password" placeholder="Input your key..." onchange="localStorage.setItem('ds_key', this.value)" 
+                       class="w-full bg-white/50 rounded-xl px-4 py-2 text-xs outline-none border border-transparent focus:border-[#59b9c6]/30 transition-all">
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col h-full glass-panel-light rounded-[2.5rem] overflow-hidden relative">
+        <main class="flex-1 flex flex-col h-full glass overflow-hidden border-none shadow-sm">
             
-            <section id="map-view" class="view-section active p-10">
-                <header class="mb-10 flex justify-between items-end">
-                    <div>
-                        <h2 class="text-5xl mb-3">Discovery</h2>
-                        <p class="opacity-40 text-sm italic">Unveil the hidden connections of words.</p>
-                    </div>
-                    <div class="relative w-72">
-                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30"></i>
-                        <input id="map-search" type="text" placeholder="Search (e.g. 永遠)" onkeypress="if(event.key==='Enter') handleMapSearch()" 
-                               class="w-full bg-white/80 rounded-2xl border border-gray-100 pl-11 pr-4 py-3.5 text-sm outline-none focus:shadow-lg transition-all">
+            <section id="map-view" class="view-section active p-8 flex flex-col h-full">
+                <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+                    <div><h2 class="text-4xl italic mb-1">Discovery</h2><p class="opacity-50 text-xs font-jp">言葉の細部を探索する</p></div>
+                    <div class="relative w-full md:w-72">
+                        <input id="search-in" type="text" placeholder="Explore word..." onkeypress="if(event.key==='Enter') searchWord()" 
+                               class="w-full bg-white/60 border border-[#59b9c6]/10 rounded-2xl pl-6 pr-4 py-3 text-sm outline-none focus:bg-white transition-all">
                     </div>
                 </header>
-                <div id="map-area" class="flex-1 overflow-y-auto custom-scrollbar pr-4">
-                    <div id="map-nodes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                    <div id="example-list" class="mt-12 space-y-6"></div>
+                <div class="flex-1 overflow-y-auto custom-scroll pr-2">
+                    <div id="nodes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    <div id="example-area" class="mt-10 space-y-6"></div>
                 </div>
             </section>
 
-            <section id="idea-view" class="view-section p-10">
-                <div class="max-w-2xl mx-auto h-full flex flex-col justify-center">
-                    <h2 class="text-6xl text-center mb-6">Inspiration</h2>
-                    <p class="text-center opacity-40 mb-12 text-sm uppercase tracking-[0.2em]">Seek guidance for your next path</p>
-                    <div class="content-card rounded-[3rem] p-12 text-center mb-10">
-                        <div class="flex justify-center gap-6 mb-10">
-                            <label class="flex items-center gap-2 cursor-pointer opacity-60 hover:opacity-100 transition-all font-medium">
-                                <input type="checkbox" name="focus" value="單詞" checked class="w-4 h-4 accent-black"> Vocabulary
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer opacity-60 hover:opacity-100 transition-all font-medium">
-                                <input type="checkbox" name="focus" value="語法" class="w-4 h-4 accent-black"> Grammar
-                            </label>
-                        </div>
-                        <button onclick="generateIdea()" id="idea-btn" class="bg-black text-white px-12 py-4 rounded-full text-[11px] font-bold tracking-widest hover:scale-105 transition-all shadow-xl">SEEK INSPIRATION</button>
-                    </div>
-                    <div id="idea-result" class="hidden animate-slide-up bg-black text-white rounded-[3rem] p-12 text-center relative overflow-hidden">
-                        <div class="relative z-10">
-                            <p id="idea-reason" class="text-2xl mb-8 opacity-70 leading-relaxed"></p>
-                            <div id="idea-keyword" onclick="handleMapSearch(this.innerText)" class="inline-block px-10 py-4 bg-white text-black rounded-full font-jp text-2xl cursor-pointer hover:bg-gray-200 transition-all">Keyword</div>
-                        </div>
-                    </div>
+            <section id="idea-view" class="view-section hidden p-10 flex flex-col items-center justify-center h-full text-center">
+                <h2 class="text-5xl italic mb-12">Inspiration</h2>
+                <div class="flex gap-4 mb-10" id="idea-types">
+                    <button onclick="selectType(this, 'Vocabulary')" class="px-8 py-2 rounded-full border border-[#59b9c6]/30 text-xs active bg-[#59b9c6] text-white">語彙</button>
+                    <button onclick="selectType(this, 'Grammar')" class="px-8 py-2 rounded-full border border-[#59b9c6]/30 text-xs">文法</button>
+                    <button onclick="selectType(this, 'Culture')" class="px-8 py-2 rounded-full border border-[#59b9c6]/30 text-xs">文化</button>
+                </div>
+                <button onclick="getIdea()" id="idea-btn" class="btn-primary px-16 py-4 text-xs tracking-widest uppercase mb-12">Seek</button>
+                <div id="idea-res" class="hidden animate-fade-in">
+                    <div id="idea-word" onclick="searchWord(this.innerText)" class="text-4xl font-jp border-b border-[#59b9c6] pb-2 cursor-pointer hover:opacity-60 transition-all inline-block">...</div>
                 </div>
             </section>
 
-            <section id="quiz-view" class="view-section p-10">
-                <header class="mb-10">
-                    <h2 class="text-5xl mb-6">Challenge</h2>
-                    <div class="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-                        <div class="flex gap-3 type-selector">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="quiz-type" value="單詞" checked class="hidden">
-                                <span class="px-5 py-2 rounded-full border border-black/10 text-[10px] font-bold tracking-widest uppercase transition-all block">Vocabulary</span>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="quiz-type" value="語法" class="hidden">
-                                <span class="px-5 py-2 rounded-full border border-black/10 text-[10px] font-bold tracking-widest uppercase transition-all block">Grammar</span>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="quiz-type" value="文化" class="hidden">
-                                <span class="px-5 py-2 rounded-full border border-black/10 text-[10px] font-bold tracking-widest uppercase transition-all block">Culture</span>
-                            </label>
+            <section id="quiz-view" class="view-section hidden p-8 flex flex-col h-full">
+                <header class="mb-10 flex flex-col gap-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-4xl italic">Challenge</h2>
+                        <button onclick="getQuiz()" id="quiz-btn" class="btn-primary px-8 py-2 text-[10px] uppercase">New Task</button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 items-center border-b border-[#59b9c6]/10 pb-4">
+                        <div class="flex gap-2" id="lv-selector">
+                            <button onclick="currentLv='N5'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N5</button>
+                            <button onclick="currentLv='N4'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N4</button>
+                            <button onclick="currentLv='N3'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N3</button>
+                            <button onclick="currentLv='N2'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px] active">N2</button>
+                            <button onclick="currentLv='N1'; updateLvUI(this)" class="level-btn w-10 h-10 rounded-full border border-[#59b9c6]/20 text-[10px]">N1</button>
                         </div>
-                        <button onclick="generateQuiz()" id="quiz-gen-btn" class="bg-black text-white px-8 py-3 rounded-full text-[10px] font-bold tracking-widest hover:opacity-80 transition-all uppercase shadow-lg">Generate Challenge</button>
+                        <select id="quiz-type" class="ml-auto bg-transparent text-[10px] uppercase outline-none font-jp">
+                            <option value="Vocabulary">語彙</option><option value="Grammar">文法</option><option value="Culture">文化</option>
+                        </select>
                     </div>
                 </header>
-                <div id="quiz-grid" class="flex-1 overflow-y-auto custom-scrollbar grid grid-cols-1 xl:grid-cols-2 gap-8 content-start pb-20">
-                    <div id="quiz-empty" class="col-span-full py-20 text-center opacity-20 italic">Select a type and generate your first challenge...</div>
-                </div>
+                <div id="quiz-container" class="flex-1 overflow-y-auto custom-scroll space-y-8 pb-10"></div>
             </section>
         </main>
+
+        <aside class="w-[280px] flex-shrink-0 flex flex-col glass p-6 h-full border-none hidden xl:flex">
+            <div class="flex items-center justify-between mb-8 opacity-60">
+                <div class="flex items-center gap-2 text-sm"><i data-lucide="list" class="w-4 h-4"></i> Records</div>
+                <button onclick="exportTxt()" class="hover:text-black transition-all"><i data-lucide="download" class="w-4 h-4"></i></button>
+            </div>
+            <div id="record-list" class="flex-1 overflow-y-auto custom-scroll space-y-5"></div>
+            <button onclick="clearSession()" class="mt-6 text-[9px] uppercase tracking-widest opacity-20 hover:opacity-100 text-center w-full">Reset Session</button>
+        </aside>
+
     </div>
 
     <script>
         lucide.createIcons();
-        let historyPath = [];
+        let sessionData = []; let used = new Set();
+        let currentLv = "N2"; let currentType = "Vocabulary";
 
-        window.onload = () => {
-            const savedKey = localStorage.getItem('deepseek_key');
-            if(savedKey) document.getElementById('api-key-input').value = savedKey;
-        };
-
-        function saveKey(val) {
-            localStorage.setItem('deepseek_key', val);
-        }
+        const apiKey = () => document.getElementById('api-key').value || localStorage.getItem('ds_key');
 
         function switchView(id, el) {
-            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('opacity-100', 'font-medium', 'active'));
-            document.getElementById(id).classList.add('active');
-            el.classList.add('opacity-100', 'font-medium', 'active');
+            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('nav-active'));
+            el.classList.add('nav-active');
         }
 
-        function setStatus(text, loading) {
-            document.getElementById('status-text').innerText = text;
-            document.getElementById('status-dot').className = loading ? "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" : "w-1.5 h-1.5 rounded-full bg-green-400";
+        function updateLvUI(btn) {
+            document.querySelectorAll('#lv-selector button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        async function callAI(prompt) {
-            const key = document.getElementById('api-key-input').value;
-            if(!key) { alert("Please Input your key in the settings box!"); return null; }
-            setStatus('Thinking...', true);
+        function selectType(btn, t) {
+            currentType = t;
+            document.querySelectorAll('#idea-types button').forEach(b => b.classList.remove('bg-[#59b9c6]', 'text-white'));
+            btn.classList.add('bg-[#59b9c6]', 'text-white');
+        }
+
+        async function ai(prompt) {
+            if(!apiKey()) return alert("API Key required");
             try {
-                const res = await fetch('https://api.deepseek.com/chat/completions', {
+                const r = await fetch('https://api.deepseek.com/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                    body: JSON.stringify({ model: "deepseek-chat", messages: [{role: "system", content: prompt}], response_format: { type: "json_object" } })
+                    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey()}`},
+                    body: JSON.stringify({ model: "deepseek-chat", messages: [{role: "system", content: prompt}], response_format: {type: "json_object"}})
                 });
-                const data = await res.json();
-                setStatus('System Ready', false);
-                return JSON.parse(data.choices[0].message.content);
-            } catch (e) { setStatus('API Error', false); return null; }
+                const d = await r.json();
+                return JSON.parse(d.choices[0].message.content);
+            } catch(e) { return null; }
         }
 
-        async function handleMapSearch(val) {
-            const query = val || document.getElementById('map-search').value;
-            if(!query) return;
-            switchView('map-view', document.querySelector('.nav-link'));
-            const data = await callAI(`Return JSON ONLY. 6 unique Japanese words related to "${query}". Format: {"c":{"w":"Kanji","r":"Reading","m":"Meaning"},"ext":[{"w":"Kanji","r":"Reading","m":"Meaning"}]}`);
-            if(!data) return;
-            renderNodes(data);
-            updateJourney(data.c);
+        function addRec(type, content) {
+            const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            sessionData.push({time, type, content});
+            const list = document.getElementById('record-list');
+            const div = document.createElement('div');
+            div.className = "text-xs border-l border-[#59b9c6]/20 pl-4 py-1 animate-fade-in";
+            div.innerHTML = `<div class="record-tag tag-${type.toLowerCase()} mb-2 inline-block scale-75 origin-left">${type}</div>
+                             <div class="font-jp opacity-70 leading-relaxed">${content}</div>`;
+            list.prepend(div);
         }
 
-        function renderNodes(data) {
-            const container = document.getElementById('map-nodes');
-            container.innerHTML = '';
-            [data.c, ...data.ext].forEach((node, i) => {
-                const card = document.createElement('div');
-                card.className = `content-card p-8 rounded-[2.5rem] cursor-pointer hover:scale-[1.02] transition-all ${i===0 ? 'border-black ring-1 ring-black/5' : ''}`;
-                card.onclick = () => handleMapSearch(node.w);
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-4 opacity-30 text-[9px] uppercase tracking-widest font-bold">
-                        <span>${i===0 ? 'Main' : 'Related'}</span>
-                        <i data-lucide="plus-circle" class="w-4 h-4" onclick="event.stopPropagation(); fetchExample('${node.w}')"></i>
-                    </div>
-                    <div class="font-jp text-3xl mb-3"><ruby>${node.w}<rt>${node.r}</rt></ruby></div>
-                    <div class="text-sm opacity-50 italic">${node.m}</div>
-                `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        async function fetchExample(word) {
-            const data = await callAI(`Return JSON ONLY. One N1 Japanese sentence for "${word}". Use <ruby>. Format: {"jp":"...","zh":"..."}`);
-            if(!data) return;
-            const card = document.createElement('div');
-            card.className = "content-card p-10 rounded-[2.5rem] border-dashed text-center animate-slide-up";
-            card.innerHTML = `<div class="text-[10px] opacity-30 uppercase tracking-widest mb-4">Example: ${word}</div><div class="font-jp text-2xl leading-loose mb-4">${data.jp}</div><div class="text-sm opacity-40 italic">${data.zh}</div>`;
-            document.getElementById('example-list').prepend(card);
-        }
-
-        async function generateIdea() {
-            const btn = document.getElementById('idea-btn');
-            btn.innerText = "CONSULTING...";
-            const learned = historyPath.map(i => i.w).join(',');
-            const data = await callAI(`Suggest one Japanese study topic, avoid [${learned}]. JSON: {"reason":"Eng reason","keyword":"Jp word"}`);
-            if(data) {
-                document.getElementById('idea-reason').innerText = data.reason;
-                document.getElementById('idea-keyword').innerText = data.keyword;
-                document.getElementById('idea-result').classList.remove('hidden');
-            }
-            btn.innerText = "SEEK INSPIRATION";
-        }
-
-        async function generateQuiz() {
-            const type = document.querySelector('input[name="quiz-type"]:checked').value;
-            const words = historyPath.slice(0, 5).map(i => i.w).join(',') || "心、空、静寂";
-            const btn = document.getElementById('quiz-gen-btn');
-            
-            btn.innerText = "GENERATING...";
-            btn.disabled = true;
-
-            const prompt = `Create 2 Japanese challenges about "${type}". 
-            If "單詞": context based on [${words}]. 
-            If "語法": focus on N2/N1 grammar. 
-            If "文化": focus on unique traditions/concepts. 
-            JSON format: {"quizzes":[{"q":"Question Text","h":"Hint/Context","a":"<ruby>Answer<rt>Reading</rt></ruby>"}]}`;
-            
-            const data = await callAI(prompt);
-            btn.innerText = "GENERATE CHALLENGE";
-            btn.disabled = false;
-
-            if(!data) return;
-
-            document.getElementById('quiz-empty')?.remove();
-            const grid = document.getElementById('quiz-grid');
-            
-            data.quizzes.forEach(q => {
-                const article = document.createElement('article');
-                article.className = "content-card rounded-[2.5rem] p-8 animate-slide-up";
-                article.innerHTML = `
-                    <div class="flex justify-between items-start mb-8">
-                        <span class="bg-black text-white px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase">${type} Challenge</span>
-                        <span class="text-[10px] opacity-30 italic">${q.h}</span>
-                    </div>
-                    <h3 class="text-2xl mb-8 leading-relaxed">${q.q}</h3>
-                    <button onclick="toggleReveal(this)" class="w-full py-4 rounded-2xl border border-gray-100 text-[11px] font-bold tracking-widest uppercase flex justify-between px-6 hover:bg-gray-50 transition-all">
-                        <span>Reveal Answer</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
-                    </button>
-                    <div class="answer-area">
-                        <div class="overflow-hidden">
-                            <div class="mt-4 p-8 bg-gray-50 rounded-2xl text-center">
-                                <div class="font-jp text-3xl mb-4">${q.a}</div>
-                                <button onclick="speak('${q.a}')" class="text-[9px] font-bold opacity-30 hover:opacity-100 uppercase flex items-center gap-2 mx-auto">
-                                    <i data-lucide="volume-2" class="w-4 h-4"></i> Speak
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                grid.prepend(article);
-                lucide.createIcons();
-            });
-        }
-
-        function updateJourney(item) {
-            if(!historyPath.find(i => i.w === item.w)) {
-                historyPath.unshift(item);
-                const container = document.getElementById('history-list');
+        async function searchWord(w) {
+            const q = w || document.getElementById('search-in').value; if(!q) return;
+            const res = await ai(`JSON. 6 words related to "${q}". {"c":{"w":"Kanji","r":"Reading","m":"Meaning"},"ext":[{"w":"Kanji","r":"Reading","m":"Meaning"}]}`);
+            if(!res) return;
+            const grid = document.getElementById('nodes-grid'); grid.innerHTML = '';
+            [res.c, ...res.ext].forEach(n => {
                 const div = document.createElement('div');
-                div.className = "journey-node group";
-                div.onclick = () => handleMapSearch(item.w);
-                div.innerHTML = `<div class="font-jp text-lg leading-none mb-1 group-hover:text-black transition-colors">${item.w}</div><div class="text-[10px] opacity-30">${item.m}</div>`;
-                container.prepend(div);
-            }
+                div.className = "card p-6 cursor-pointer hover:border-[#59b9c6]/40 relative group";
+                div.onclick = () => searchWord(n.w);
+                div.innerHTML = `<div class="absolute right-4 top-4 opacity-0 group-hover:opacity-40" onclick="event.stopPropagation(); getExample('${n.w}')"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                                 <div class="font-jp text-xl mb-1"><ruby>${n.w}<rt>${n.r}</rt></ruby></div>
+                                 <p class="text-[10px] opacity-40 font-jp tracking-wider">${n.m}</p>`;
+                grid.appendChild(div);
+            });
+            lucide.createIcons(); addRec("Discovery", res.c.w);
         }
 
-        function toggleReveal(btn) {
-            const area = btn.nextElementSibling;
-            const isRev = area.classList.toggle('revealed');
-            btn.querySelector('span').innerText = isRev ? 'Hide Answer' : 'Reveal Answer';
-            btn.querySelector('i').style.transform = isRev ? 'rotate(180deg)' : 'rotate(0deg)';
+        async function getExample(w) {
+            const res = await ai(`JSON. N1 sentence for "${w}". {"jp":"...","zh":"..."}`); if(!res) return;
+            const div = document.createElement('div');
+            div.className = "card p-8 border-dashed border-[#59b9c6]/20 text-center animate-slide-up";
+            div.innerHTML = `<p class="font-jp text-lg mb-2">${res.jp}</p><p class="text-[10px] opacity-30 italic font-jp">${res.zh}</p>`;
+            document.getElementById('example-area').prepend(div);
         }
 
-        function speak(html) {
-            window.speechSynthesis.cancel();
-            const text = html.replace(/<rt>.*?<\/rt>|<\/?ruby>/g, '');
-            const u = new SpeechSynthesisUtterance(text); u.lang = 'ja-JP'; u.rate = 0.85;
-            window.speechSynthesis.speak(u);
+        async function getIdea() {
+            const res = await ai(`JSON. Specific Japanese ${currentType} topic in Japanese. {"word":"..."}`);
+            if(res) { document.getElementById('idea-word').innerText = res.word; document.getElementById('idea-res').classList.remove('hidden'); addRec("Inspiration", res.word); }
         }
 
-        // --- BG Animation ---
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let width, height, blobs = [], time = 0;
-        function resize() { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; }
-        class Blob {
-            constructor() { this.reset(); this.baseRadius = this.radius; this.phase = Math.random() * Math.PI * 2; }
-            reset() { this.x = Math.random() * width; this.y = Math.random() * height; this.radius = Math.random() * (width * 0.3) + (width * 0.1); this.vx = (Math.random() - 0.5) * 0.1; this.vy = (Math.random() - 0.5) * 0.1; }
-            update() { this.x += this.vx; this.y += this.vy; this.currentRadius = this.baseRadius + Math.sin(time * 0.0005 + this.phase) * (this.baseRadius * 0.05); if(this.x<0 || this.x>width) this.vx*=-1; if(this.y<0 || this.y>height) this.vy*=-1; }
-            draw() { const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.currentRadius); g.addColorStop(0, 'rgba(242,242,242,0.8)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.beginPath(); ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill(); }
+        async function getQuiz() {
+            const type = document.getElementById('quiz-type').value;
+            const res = await ai(`JSON. JLPT ${currentLv} quiz for ${type}. Use "[BLANK]". {"q":"Sentence with [BLANK]","h":"Hint","a":"CorrectAnswer","r":"<ruby>Ans<rt>...</rt></ruby>"}`);
+            if(!res || used.has(res.a)) return getQuiz(); used.add(res.a);
+            const id = Date.now();
+            const qHtml = res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-2 w-28 border-b border-[#59b9c6] bg-transparent text-center outline-none focus:border-b-2 transition-all" placeholder="?">`);
+            const div = document.createElement('div');
+            div.className = "card p-10 relative overflow-hidden";
+            div.innerHTML = `<div class="absolute right-6 top-6 opacity-20 text-[10px]">${currentLv}</div>
+                             <div class="text-2xl font-jp mb-10 leading-relaxed text-center">${qHtml}</div>
+                             <div class="flex justify-center flex-col items-center gap-6">
+                                <button onclick="evalQuiz('${id}','${res.a}','${res.r.replace(/'/g,"\\'")}')" class="btn-primary px-12 py-2 text-[10px] tracking-widest uppercase">Evaluate</button>
+                                <div id="res-${id}" class="hidden text-center font-jp animate-fade-in"></div>
+                             </div>`;
+            document.getElementById('quiz-container').prepend(div);
+            addRec("Challenge", `${currentLv} Task`);
         }
-        function animate() { time += 16; ctx.clearRect(0,0,width,height); ctx.filter = 'blur(100px)'; blobs.forEach(b => { b.update(); b.draw(); }); requestAnimationFrame(animate); }
-        window.addEventListener('resize', resize); resize();
-        for(let i=0; i<6; i++) blobs.push(new Blob());
-        animate();
+
+        function evalQuiz(id, ans, ruby) {
+            const val = document.getElementById(`in-${id}`).value.trim(); const box = document.getElementById(`res-${id}`);
+            box.innerHTML = (val === ans) ? `<div class="text-[#59b9c6] text-xl">${ruby}</div>` : `<div class="opacity-30 text-xs italic">Try again...</div>`;
+            box.classList.remove('hidden');
+        }
+
+        function exportTxt() {
+            if(sessionData.length === 0) return;
+            const content = sessionData.map(d => `[${d.time}] ${d.type}: ${d.content}`).join('\n');
+            const blob = new Blob([content], {type: 'text/plain'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Session.txt`; a.click();
+        }
+
+        function clearSession() { document.getElementById('record-list').innerHTML=''; sessionData=[]; }
     </script>
 </body>
 </html>
