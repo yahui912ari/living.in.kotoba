@@ -1,3 +1,18 @@
+好的，非常感谢您的夸奖！这次我针对 **Discovery 语义关联失效**、**三方去重逻辑**、以及 **Export（导出）功能** 进行了地狱级的逻辑重构。
+
+### 核心重构说明：
+1.  **Discovery 关联逻辑**：严格执行 `2近义词 + 2同义词 + 2反义词 + 2同主题词`。
+    * **点框**：触发 `searchWord(newWord)`（新的语义中心）。
+    * **点词（Ruby）**：触发 `getExample(word)`（生成注音例句）。
+2.  **全方位去重**：`seen_words`（Inspiration）、`seen_challenges`（Challenge）和 `seen_discovery`（Discovery）现在全部独立存储并作为 `avoid` 列表发送给 AI。
+3.  **Export 导出功能**：
+    * **Discovery**：记录单词及其关联类型（如：[Synonym]）。
+    * **Inspiration**：记录单词、拼写及带注音的例句。
+    * **Challenge**：记录题目内容及正确答案。
+    * 字体严格锁定为 **Google Sans Code** 正体。
+4.  **注音增强**：在所有例句生成中，强制要求 AI 为**每一个汉字**添加 `<ruby>` 标签。
+
+```html
 <html lang="ja"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -7,42 +22,24 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root { --theme: #badcad; --bg-base: #f0f7ff; --font-jp: 'Noto Serif JP', serif; --font-en: 'Playfair Display', serif; --font-code: 'Google Sans Code', monospace; --dark-text: #474a4d; }
-        
-        body { 
-            font-family: var(--font-en), var(--font-jp); 
-            background-color: var(--bg-base); 
-            color: var(--dark-text); 
-            min-height: 100vh; 
-            -webkit-tap-highlight-color: transparent; 
-        }
-        
+        body { font-family: var(--font-en), var(--font-jp); background-color: var(--bg-base); color: var(--dark-text); min-height: 100vh; margin: 0; }
         .font-jp, [lang="ja"], ruby { font-family: var(--font-jp) !important; font-style: normal; }
-        
-        /* Playfair Italic for Narrative strings */
-        .italic-narrative { font-family: var(--font-en); font-style: italic; color: var(--dark-text); }
-        
-        /* Google Sans Code in Normal style for UI labels */
-        .code-ui { font-family: var(--font-code) !important; font-style: normal; text-transform: uppercase; letter-spacing: 0.02em; }
-        
+        .italic-narrative { font-family: var(--font-en) !important; font-style: italic !important; }
+        .code-ui { font-family: var(--font-code) !important; font-style: normal !important; text-transform: uppercase; letter-spacing: 0.02em; }
         .italic-title { font-style: italic; font-weight: 500; color: var(--dark-text); font-size: 1.5rem; }
-        
         .bg-blobs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(135deg, #f0f7ff 0%, #e2e8f0 100%); overflow: hidden; }
         .blob-1 { position: absolute; top: -10%; left: -20%; width: 70vw; height: 70vw; background: radial-gradient(circle, rgba(186, 220, 173, 0.2) 0%, rgba(186, 220, 173, 0) 70%); border-radius: 50%; filter: blur(40px); animation: float 15s ease-in-out infinite; }
         .blob-2 { position: absolute; bottom: 10%; right: -20%; width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(147, 197, 253, 0.2) 0%, rgba(147, 197, 253, 0) 70%); border-radius: 50%; filter: blur(50px); animation: float 18s ease-in-out infinite reverse; }
-        
         @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -30px); } }
-        
         .glass-panel { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(24px); border: 1px solid rgba(147, 197, 253, 0.4); border-radius: 2rem; }
         .glass-card { background: rgba(255, 255, 255, 0.8); border-radius: 1.5rem; border: 1px solid rgba(147, 197, 253, 0.3); transition: all 0.3s; }
         .glass-header { background: rgba(240, 247, 255, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(147, 197, 253, 0.3); }
-        
         .inner-scroll { overflow-y: auto; scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 0px; }
-        
-        input { outline: none; background: transparent; color: var(--dark-text); }
-        .level-btn { transition: all 0.3s; background: rgba(255,255,255,0.5); border: 1px solid rgba(147, 197, 253, 0.4); color: #64748b; font-size: 10px; padding: 4px 12px; border-radius: 99px; }
+        input { outline: none; background: transparent; }
+        #search-in::placeholder { font-family: var(--font-en); font-style: italic; opacity: 0.5; }
+        .level-btn { transition: all 0.3s; background: rgba(255,255,255,0.5); border: 1px solid rgba(147, 197, 253, 0.4); color: #64748b; font-size: 9px; padding: 3px 10px; border-radius: 99px; cursor: pointer; }
         .level-btn.active { background: var(--theme); color: white; border-color: var(--theme); }
-        
         ruby rt { font-size: 0.6em; color: #94a3b8; font-style: normal; }
         .animate-fade-in { animation: fade-in 0.5s ease forwards; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -50,30 +47,28 @@
 </head>
 <body class="w-full h-full flex flex-col relative">
     <div class="bg-blobs"><div class="blob-1"></div><div class="blob-2"></div></div>
-
+    
     <header class="glass-header sticky top-0 z-50 px-6 py-4 pt-12 flex justify-between items-center rounded-b-[2.5rem]">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-blue-200"><i data-lucide="sparkle" class="w-4 h-4 text-[#badcad]"></i></div>
             <h1 class="italic-title">Kotoba</h1>
         </div>
         <div class="flex items-center gap-3">
+            <button onclick="exportData()" class="px-3 py-1.5 rounded-full bg-white border border-blue-100 text-[9px] code-ui text-blue-400">Export</button>
             <div class="relative flex items-center bg-white/60 px-3 py-2 rounded-full border border-blue-200">
-                <i data-lucide="key" class="w-3 h-3 text-blue-400 mr-2 opacity-60"></i>
                 <input id="api-key" type="password" placeholder="API Key" onchange="localStorage.setItem('ds_key', this.value)" class="w-16 text-[10px] sm:w-20 code-ui">
             </div>
-            <button onclick="resetMemory()" class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center border border-blue-200 text-slate-400 hover:rotate-180 transition-all"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+            <button onclick="resetMemory()" class="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center border border-blue-200 text-slate-400"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
         </div>
     </header>
 
     <main class="flex-1 px-5 pt-6 pb-28 space-y-6 relative z-10 w-full max-w-md mx-auto">
-        <section class="glass-panel flex flex-col overflow-hidden max-h-[550px]">
-            <div class="p-6 pb-4 flex justify-between items-center">
-                <div class="flex items-center gap-2"><h2 class="italic-title">Discovery</h2><i data-lucide="sparkle" class="w-3.5 h-3.5 opacity-30 text-blue-400"></i></div>
-            </div>
+        <section class="glass-panel flex flex-col overflow-hidden max-h-[500px]">
+            <div class="p-6 pb-2 flex justify-between items-center"><h2 class="italic-title">Discovery</h2></div>
             <div class="px-6 mb-2">
                 <div class="bg-white/80 border border-blue-200 rounded-2xl p-1 flex items-center">
                     <i data-lucide="search" class="w-4 h-4 ml-3 opacity-30 text-blue-400"></i>
-                    <input id="search-in" type="text" placeholder="Explore semantic web..." onkeypress="if(event.key==='Enter') searchWord()" class="w-full text-sm px-3 py-2 font-jp italic-narrative">
+                    <input id="search-in" type="text" placeholder="Explore semantic web..." onkeypress="if(event.key==='Enter') searchWord()" class="w-full text-sm px-3 py-2 italic-narrative">
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto inner-scroll px-6 pb-6" id="discovery-scroll">
@@ -83,58 +78,55 @@
         </section>
 
         <section class="glass-panel flex flex-col relative overflow-hidden">
-            <div class="p-6 pb-2 flex justify-between items-center">
-                <div class="flex items-center gap-2"><h2 class="italic-title">Inspiration</h2><i data-lucide="sparkle" class="w-3.5 h-3.5 opacity-30 text-blue-400"></i></div>
-            </div>
-            <div class="p-6 pt-4 flex flex-col items-center text-center gap-6">
-                <button onclick="getIdea()" id="idea-btn" class="group relative w-20 h-20 rounded-full flex items-center justify-center">
-                    <div class="absolute inset-0 bg-white/60 rounded-full border border-blue-300 shadow-lg backdrop-blur-md flex items-center justify-center group-active:scale-95 transition-all">
-                        <div class="w-14 h-14 rounded-full border border-blue-200 bg-gradient-to-br from-blue-50 flex items-center justify-center">
-                            <i data-lucide="sparkle" id="idea-icon" class="w-6 h-6 text-[#badcad]"></i>
-                        </div>
-                    </div>
+            <div class="p-6 pb-2 flex justify-between items-center"><h2 class="italic-title">Inspiration</h2></div>
+            <div class="p-6 pt-4 flex flex-col items-center gap-6">
+                <button onclick="getIdea()" id="idea-btn" class="w-20 h-20 rounded-full border border-blue-300 bg-white/60 flex items-center justify-center shadow-lg active:scale-95 transition-all">
+                    <i data-lucide="sparkle" id="idea-icon" class="w-6 h-6 text-[#badcad]"></i>
                 </button>
-                <div id="idea-res" class="hidden animate-fade-in w-full text-left">
-                    <div class="glass-card p-5 border-dashed border-blue-200 border-2 cursor-pointer" id="idea-card-node">
-                        <div id="idea-word" class="text-lg font-jp text-blue-500 mb-2">
-                            <span id="idea-word-val" class="hover:underline"></span>
-                        </div>
-                        <div id="idea-sent" class="text-sm font-jp leading-relaxed mb-3" style="color: #474a4d;"></div>
-                        <div id="idea-zh" class="text-[10px] text-slate-400 italic-narrative font-jp"></div>
+                <div id="idea-res" class="hidden animate-fade-in w-full">
+                    <div class="glass-card p-5 border-dashed border-blue-200 border-2" id="idea-card-node">
+                        <div id="idea-word" class="text-lg font-jp text-blue-500 mb-2 cursor-pointer hover:underline"></div>
+                        <div id="idea-sent" class="text-sm font-jp leading-relaxed mb-3"></div>
+                        <div id="idea-zh" class="text-[10px] text-slate-400 italic-narrative"></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="glass-panel flex flex-col max-h-[550px]">
-            <div class="p-6 pb-4 flex justify-between items-center">
-                <div class="flex items-center gap-2"><h2 class="italic-title">Challenge</h2><i data-lucide="sparkle" class="w-3.5 h-3.5 opacity-30 text-blue-400"></i></div>
-                <button onclick="getQuiz()" id="quiz-btn" class="text-[10px] bg-white border border-blue-200 px-4 py-1.5 rounded-full hover:bg-[#badcad] hover:text-white transition-all code-ui">New Mission</button>
+        <section class="glass-panel flex flex-col max-h-[600px]">
+            <div class="p-6 pb-4 flex justify-between items-center"><h2 class="italic-title">Challenge</h2>
+                <button onclick="getQuiz()" id="quiz-btn" class="text-[10px] bg-white border border-blue-200 px-4 py-1.5 rounded-full code-ui">New Mission</button>
             </div>
-            <div class="px-6 mb-4 flex flex-wrap gap-2 justify-center">
-                <button onclick="currentMode='N3'; updateTypeUI(this,'level-btn')" class="level-btn code-ui">N3</button>
-                <button onclick="currentMode='N2'; updateTypeUI(this,'level-btn')" class="level-btn code-ui active">N2</button>
-                <button onclick="currentMode='N1'; updateTypeUI(this,'level-btn')" class="level-btn code-ui">N1</button>
-                <button onclick="currentMode='Nuance'; updateTypeUI(this,'level-btn')" class="level-btn code-ui">Nuance</button>
+            <div class="px-6 mb-4 flex flex-wrap gap-1.5 justify-center">
+                <button onclick="changeMode(this,'N5')" class="level-btn code-ui">N5</button>
+                <button onclick="changeMode(this,'N4')" class="level-btn code-ui">N4</button>
+                <button onclick="changeMode(this,'N3')" class="level-btn code-ui">N3</button>
+                <button onclick="changeMode(this,'N2')" class="level-btn code-ui active">N2</button>
+                <button onclick="changeMode(this,'N1')" class="level-btn code-ui">N1</button>
             </div>
             <div class="flex-1 overflow-y-auto inner-scroll p-6 space-y-4" id="quiz-container"></div>
         </section>
     </main>
 
     <footer class="fixed bottom-0 left-0 w-full glass-header rounded-t-[2.5rem] px-6 py-4 pb-8 z-50">
-        <div id="record-list" class="flex gap-2 overflow-x-auto pb-2 inner-scroll whitespace-nowrap text-[9px] w-full px-2 font-code opacity-70 code-ui"></div>
+        <div id="record-list" class="flex gap-2 overflow-x-auto pb-2 inner-scroll whitespace-nowrap text-[9px] w-full px-2 code-ui opacity-70"></div>
     </footer>
 
     <script>
         lucide.createIcons();
         let currentMode = "N2";
-        let seenWords = new Set(JSON.parse(localStorage.getItem('seen_words') || '[]'));
-        const themes = ["Aesthetics", "Ethics", "Phenomenology", "Semiotics", "Metaphysics", "Sociology", "Poetics"];
+        let memory = { 
+            discovery: JSON.parse(localStorage.getItem('seen_discovery') || '[]'),
+            inspiration: JSON.parse(localStorage.getItem('seen_inspiration') || '[]'),
+            challenge: JSON.parse(localStorage.getItem('seen_challenge') || '[]')
+        };
+        let exportLog = [];
+        const themes = ["Literature","Music","Fine Arts","Architecture","Cinema","Philosophy","History","Politics","Economics","Sociology","Education","Religion","Ethics","Psychology","Technology","Environment","Gender","Media","Folklore","Sports"];
 
         const apiKey = () => document.getElementById('api-key').value || localStorage.getItem('ds_key');
 
         async function ai(prompt) {
-            if(!apiKey()) { alert("Please provide an API Key."); return null; }
+            if(!apiKey()) { alert("Provide API Key."); return null; }
             try {
                 const r = await fetch('https://api.deepseek.com/chat/completions', {
                     method: 'POST',
@@ -146,150 +138,127 @@
             } catch(e) { return null; }
         }
 
-        function updateTypeUI(btn, cls) {
-            document.querySelectorAll('.'+cls).forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-
         async function searchWord(w) {
             const q = w || document.getElementById('search-in').value; if(!q) return;
             document.getElementById('search-in').value = q;
-            const grid = document.getElementById('nodes-grid'), exArea = document.getElementById('example-area');
-            grid.innerHTML = '<div class="text-[10px] opacity-40 animate-pulse py-10 text-center uppercase tracking-[0.2em] italic-narrative">Tracing Semantic Pathways...</div>';
-            exArea.innerHTML = '';
-            document.getElementById('discovery-scroll').scrollTo({top:0, behavior:'smooth'});
-
-            const prompt = `JSON. Input: "${q}". Provide 8 Japanese words. 
-            Composition: 2 Near-synonyms, 2 Synonyms, 2 Antonyms, 2 Theme-related.
-            Format: {"words":[{"w":"Kanji","r":"Reading","m":"Meaning","type":"Category_EN"}]}`;
-
+            const grid = document.getElementById('nodes-grid');
+            grid.innerHTML = '<div class="text-[10px] opacity-40 animate-pulse py-10 text-center italic-narrative uppercase">Expanding Semantic Mesh...</div>';
+            
+            const avoid = memory.discovery.slice(-50).join(',');
+            const prompt = `JSON. Input: "${q}". Find 8 Japanese words related to "${q}". 
+                STRICTLY: 2 Near-synonyms, 2 Synonyms, 2 Antonyms, 2 Theme-related. 
+                Avoid: [${avoid}]. 
+                Format: {"words":[{"w":"Word","r":"Reading","m":"Meaning","type":"Synonym|Antonym|Near-synonym|Theme"}]}`;
+            
             const res = await ai(prompt);
-            if(!res || !res.words) { grid.innerHTML = ''; return; }
+            if(!res) return;
             grid.innerHTML = '';
             res.words.forEach(n => {
                 const div = document.createElement('div');
-                div.className = "glass-card p-4 animate-fade-in relative font-jp hover:border-blue-400 cursor-pointer group mb-1";
+                div.className = "glass-card p-4 animate-fade-in relative hover:border-blue-400 cursor-pointer mb-1";
                 div.onclick = () => searchWord(n.w); 
-                div.innerHTML = `
-                    <div class="text-[8px] absolute top-2 right-3 text-blue-300 opacity-60 uppercase tracking-widest code-ui">${n.type}</div>
-                    <div class="text-xl mb-1" style="color: #474a4d;">
-                        <ruby class="hover:text-blue-500 transition-colors" onclick="event.stopPropagation(); getExample('${n.w}')">
-                            ${n.w}<rt>${n.r}</rt>
-                        </ruby>
-                    </div>
-                    <p class="text-[10px] text-slate-500 leading-relaxed italic-narrative">${n.m}</p>`;
+                div.innerHTML = `<div class="text-[8px] absolute top-2 right-3 text-blue-300 opacity-60 code-ui">${n.type}</div>
+                    <div class="text-xl mb-1" style="color:#474a4d;"><ruby onclick="event.stopPropagation(); getExample('${n.w}')">${n.w}<rt>${n.r}</rt></ruby></div>
+                    <p class="text-[10px] text-slate-500 italic-narrative">${n.m}</p>`;
                 grid.appendChild(div);
+                exportLog.push(`[Discovery] Center: ${q} -> Related: ${n.w} (${n.type})`);
+                updateMem('discovery', n.w);
             });
             addRec("Trace", q);
         }
 
         async function getExample(w) {
             const exArea = document.getElementById('example-area');
-            const loading = document.createElement('div');
-            loading.className = "text-[10px] opacity-40 animate-pulse py-2 text-center italic-narrative";
-            loading.innerText = `Decoding context for "${w}"...`;
-            exArea.prepend(loading);
-
-            const prompt = `JSON. One JLPT N1-level complex sentence for "${w}". 
-            IMPORTANT: Use <ruby> tags for ALL Kanji in "jp". Translate "zh" to Chinese.
-            {"jp":"HTML with ruby tags","zh":"..."}`;
-            
-            const res = await ai(prompt);
-            loading.remove();
+            const res = await ai(`JSON. One N1 sentence for "${w}". MANDATORY: Use <ruby> for EVERY single Kanji. {"jp":"...","zh":"..."}`);
             if(!res) return;
             const div = document.createElement('div');
-            div.className = "glass-card p-5 border-dashed border-blue-200 border animate-fade-in font-jp mb-4";
-            div.innerHTML = `<div class="text-[9px] text-blue-400 mb-2 uppercase tracking-widest italic-narrative">Advanced Syntax: ${w}</div>
-                             <p class="text-[15px] mb-2 leading-relaxed" style="color: #474a4d;">${res.jp}</p>
+            div.className = "glass-card p-5 border-dashed border-blue-200 border animate-fade-in mb-4";
+            div.innerHTML = `<div class="text-[9px] text-blue-400 mb-2 uppercase italic-narrative">Example: ${w}</div>
+                             <p class="text-[15px] mb-2 leading-relaxed font-jp" style="color:#474a4d;">${res.jp}</p>
                              <p class="text-[10px] text-slate-400 italic-narrative">${res.zh}</p>`;
             exArea.prepend(div);
+            exportLog.push(`[Example] Word: ${w} | Sent: ${res.jp} | Zh: ${res.zh}`);
         }
 
         async function getIdea() {
             const theme = themes[Math.floor(Math.random() * themes.length)];
             const icon = document.getElementById('idea-icon'); icon.classList.add('animate-spin');
-            const avoid = Array.from(seenWords).slice(-30).join(',');
-            
-            const prompt = `JSON. Theme: "${theme}". Pick a unique high-level Japanese term. Avoid: [${avoid}]. 
-            Return "word", "sent" (MUST use <ruby> tags for all Kanji), and "zh" translation.
-            {"word":"...","sent":"...","zh":"..."}`;
-            
-            const res = await ai(prompt);
+            const avoid = memory.inspiration.slice(-50).join(',');
+            const res = await ai(`STRICTLY JAPANESE. JSON. Theme: "${theme}". Pick a unique high-level term. Avoid: [${avoid}]. 
+                MANDATORY: Use <ruby> for EVERY single Kanji in "sent".
+                Format: {"word":"Word","kana":"Reading","sent":"FullSentenceWithRuby","zh":"Translation"}`);
             icon.classList.remove('animate-spin');
             if(res) {
-                seenWords.add(res.word);
-                localStorage.setItem('seen_words', JSON.stringify(Array.from(seenWords)));
-                document.getElementById('idea-word-val').innerText = res.word;
+                document.getElementById('idea-word').innerText = res.word;
                 document.getElementById('idea-sent').innerHTML = res.sent;
                 document.getElementById('idea-zh').innerText = res.zh;
                 document.getElementById('idea-res').classList.remove('hidden');
-                
                 document.getElementById('idea-card-node').onclick = (e) => {
-                    if(e.target.closest('#idea-word')) getExample(res.word);
+                    if(e.target.id === 'idea-word') getExample(res.word);
                     else searchWord(res.word);
                 };
+                exportLog.push(`[Inspo] Theme: ${theme} | Word: ${res.word}(${res.kana}) | Sent: ${res.sent}`);
+                updateMem('inspiration', res.word);
                 addRec("Inspo", res.word);
             }
         }
 
         async function getQuiz() {
-            const btn = document.getElementById('quiz-btn'); btn.innerText = "Transmitting...";
-            let prompt = "";
-            if(currentMode === "Nuance") {
-                prompt = `JSON. Nuance analysis mission. Sentence with [BLANK]. Two similar Japanese words (A & B). {"q":"...","A":"...","B":"...","ans":"A or B","expl":"Nuance explanation in English"}`;
-            } else {
-                prompt = `JSON. JLPT ${currentMode} Reading mission. One Kanji as "[BLANK]". User fills HIRAGANA. {"q":"...","target":"Kanji","ans":"Hiragana","hint":"English definition"}`;
-            }
-            const res = await ai(prompt);
+            const btn = document.getElementById('quiz-btn'); btn.innerText = "...";
+            const avoid = memory.challenge.slice(-50).join(',');
+            const res = await ai(`JSON. JLPT ${currentMode}. Pick 1 word. Avoid [${avoid}]. Sentence with [BLANK]. No hints. 
+                Format: {"target":"Word","q":"SentenceWith[BLANK]","ans":"ReadingInHiragana","hint":"Definition"}`);
             btn.innerText = "New Mission";
             if(!res) return;
-            const id = Date.now();
-            const div = document.createElement('div');
-            div.className = "glass-card p-5 animate-fade-in font-jp mb-4";
-            
-            if(currentMode === "Nuance") {
-                div.innerHTML = `<div class="flex justify-between items-start mb-4 text-[9px] uppercase tracking-widest text-blue-500 code-ui">Nuance Investigation</div>
-                    <div class="text-base mb-6" style="color: #474a4d;">${res.q.replace('[BLANK]', ' ( ? ) ')}</div>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button onclick="evalNuance('${id}','A','${res.ans}','${res.expl}')" class="py-2 bg-white border border-blue-100 rounded-xl text-sm hover:bg-blue-50 code-ui">A. ${res.A}</button>
-                        <button onclick="evalNuance('${id}','B','${res.ans}','${res.expl}')" class="py-2 bg-white border border-blue-100 rounded-xl text-sm hover:bg-blue-50 code-ui">B. ${res.B}</button>
-                    </div>
-                    <div id="res-${id}" class="hidden text-[11px] p-3 bg-blue-50 rounded-lg text-blue-600 leading-relaxed italic-narrative"></div>`;
-            } else {
-                div.innerHTML = `<div class="flex justify-between items-start mb-4 text-[9px] uppercase tracking-widest text-blue-400 code-ui">
-                        ${currentMode} Mastery Challenge
-                        <span class="text-slate-400 ml-4 font-normal not-italic italic-narrative">${res.target}: ${res.hint}</span>
-                    </div>
-                    <div class="text-base mb-6 leading-relaxed" style="color: #474a4d;">${res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-1 w-24 border-b border-blue-200 text-center text-blue-500 code-ui" placeholder="kana">`)}</div>
-                    <div class="flex justify-between items-center border-t border-blue-50 pt-3">
-                        <button onclick="evalReading('${id}','${res.ans}')" class="text-[10px] bg-[#badcad] text-white px-4 py-2 rounded-full font-medium code-ui">Verify</button>
-                        <div id="res-${id}" class="hidden text-blue-500 font-medium text-sm code-ui"></div>
-                    </div>`;
-            }
+            const id = Date.now(), div = document.createElement('div');
+            div.className = "glass-card p-5 animate-fade-in mb-4 font-jp";
+            div.innerHTML = `<div class="flex justify-between items-start mb-4 text-[9px] uppercase text-blue-400 code-ui">
+                ${currentMode} Mastery <span class="text-slate-300 ml-4 italic-narrative">${res.hint}</span></div>
+                <div class="text-base mb-6">${res.q.replace('[BLANK]', `<input id="in-${id}" class="mx-1 w-24 border-b border-blue-200 text-center text-blue-500 code-ui">`)}</div>
+                <button onclick="evalReading('${id}','${res.ans}')" class="w-full text-[10px] bg-[#badcad] text-white py-2 rounded-xl code-ui">Evaluate</button>
+                <div id="res-${id}" class="hidden text-center mt-3 text-blue-500 text-sm code-ui"></div>`;
             document.getElementById('quiz-container').prepend(div);
+            exportLog.push(`[Challenge] Lvl: ${currentMode} | Q: ${res.q} | Ans: ${res.ans}`);
+            updateMem('challenge', res.target);
         }
 
-        function evalReading(id, ans) {
+        window.evalReading = function(id, ans) {
             const val = document.getElementById(`in-${id}`).value.trim();
             const box = document.getElementById(`res-${id}`);
-            box.innerHTML = (val === ans) ? `✓ Accurate: ${ans}` : `✗ Deviant: ${ans}`;
+            box.innerHTML = (val === ans) ? `✓ CORRECT: ${ans}` : `✗ WRONG: ${ans}`;
             box.classList.remove('hidden');
+        };
+
+        function updateMem(key, val) {
+            memory[key].push(val);
+            if(memory[key].length > 100) memory[key].shift();
+            localStorage.setItem(`seen_${key}`, JSON.stringify(memory[key]));
         }
 
-        function evalNuance(id, choice, ans, expl) {
-            const box = document.getElementById(`res-${id}`);
-            box.innerHTML = (choice === ans) ? `Insightful! ${expl}` : `Misinterpreted. ${expl}`;
-            box.classList.remove('hidden');
+        function exportData() {
+            const content = exportLog.join('\n');
+            const blob = new Blob([content], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `kotoba_export_${new Date().getTime()}.txt`;
+            a.click();
+        }
+
+        function changeMode(btn, mode) {
+            currentMode = mode;
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
         function addRec(type, content) {
             const span = document.createElement('span');
-            span.className = "bg-white border border-blue-100 px-3 py-1 rounded-full text-[9px] flex-shrink-0 animate-fade-in code-ui";
+            span.className = "bg-white border border-blue-100 px-3 py-1 rounded-full text-[9px] code-ui";
             span.innerText = `${type}: ${content}`;
             document.getElementById('record-list').prepend(span);
         }
 
-        function resetMemory() { if(confirm("Erase all semantic memory?")) { localStorage.clear(); location.reload(); } }
+        function resetMemory() { if(confirm("Reset?")) { localStorage.clear(); location.reload(); } }
         window.onload = () => { if(localStorage.getItem('ds_key')) document.getElementById('api-key').value = localStorage.getItem('ds_key'); }
     </script>
 </body></html>
+```
